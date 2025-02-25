@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Interactive Graph Visualizer</title>
+  <style>
+    #mynetwork {
+      width: 1000px;
+      height: 700px;
+      border: 1px solid lightgray;
+    }
+  </style>
+</head>
+<body>
+  <div id="mynetwork"></div>
+  <script src="https://visjs.github.io/vis-network/standalone/umd/vis-network.min.js"></script>
+  <script>
+	 var data = {
+	  nodes: [
+	    { id: 1, label: "Node 1" },
+	    { id: 2, label: "Node 2" },
+	    { id: 3, label: "Node 3" },
+	    { id: 4, label: "document.getElementById" }
+	  ],
+	  edges: [
+	    { from: 1, to: 2 },
+	    { from: 2, to: 3 },
+	    { from: 3, to: 4 },
+	    { from: 4, to: 3 }
+	  ]
+	};   // JavaScript code goes here
+	var container = document.getElementById("mynetwork");
+	var options = {
+	  interaction: {
+	    dragNodes: true,  // Allow dragging nodes
+	    zoomView: true    // Enable zooming
+	  },
+	  physics: {
+	    enabled: true     // Enable force-directed layout
+	  }
+	};
+	var network = new vis.Network(container, data, options);
+	network.on("selectNode", function(params) {
+	var nodeId = params.nodes[0];
+	var node = data.nodes.find(n => n.id === nodeId);
+	alert("Selected: " + node.label);
+      });
+  </script>
+</body>
+</html>
