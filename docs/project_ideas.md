@@ -17,8 +17,8 @@ A tool that can visualize the codebase of a project.
 
 ### Existing tools:
 
-- [PyCallGraph]://github.com/Lewiscowles1986/py-call-graph?tab=readme-ov-file)
-- [graphviz]://github.com/CodeFreezr/awesome-graphviz)
+- [PyCallGraph](https://github.com/Lewiscowles1986/py-call-graph?tab=readme-ov-file)
+- [graphviz](https://github.com/CodeFreezr/awesome-graphviz)
 
 
 ### Tech stack
