@@ -1,0 +1,15 @@
+[project]
+name = "spring-2025-final-project-project-group-2"
+version = "0.1.0"
+description = "GenAI project for DSAN6725"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "dotenv>=0.9.9",
+    "langchain>=0.3.19",
+    "langchain-experimental>=0.3.4",
+    "langchain-openai>=0.3.7",
+    "networkx>=3.4.2",
+    "numpy>=1.26.4",
+    "seaborn>=0.13.2",
+]
