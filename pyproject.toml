@@ -9,6 +9,7 @@ dependencies = [
     "langchain>=0.3.19",
     "langchain-experimental>=0.3.4",
     "langchain-openai>=0.3.7",
+    "neo4j>=5.28.1",
     "networkx>=3.4.2",
     "numpy>=1.26.4",
     "seaborn>=0.13.2",
