@@ -5,7 +5,7 @@ services:
     pull_policy: always
     ports:
       - "7687:7687"
-      - "7560:7444"
+      - "7444:7444"
     command: ["--log-level=TRACE"]
 
   lab:
