@@ -171,3 +171,4 @@ cython_debug/
 .pypirc
 
 # memgraph-platform/
+docs/notebooks/assignment-2-mcdonald-s/
