@@ -61,7 +61,7 @@ def initialize_session_state():
         #########
         # MODEL #
         #########
-        llm = ChatAnthropic(model="claude-3-sonnet-20240229")
+        llm = ChatAnthropic(model="claude-3-5-sonnet-20240620")
 
         #########
         # TOOLS #
