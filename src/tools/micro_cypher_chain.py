@@ -144,7 +144,7 @@ def create_validate_cypher_chain(llm):
         ),
     ])
 
-    return validate_cypher_prompt 
+    return validate_cypher_prompt | llm.with_structured_output(ValidateCypherOutput)
 
 def create_correct_cypher_chain(llm):
     """Create a chain for correcting Cypher queries"""
