@@ -57,13 +57,13 @@ class ValidateCypherOutput(BaseModel):
     )
 
 # Default examples for few-shot learning
-DEFAULT_EXAMPLES = [
+default_examples = [
     {
-        "question": "How is the Utils.Utils module related to the Deduplicatioin.__Main__ module?",
+        "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
         "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path",
     },
     {
-        "question": "How is the Utils.Utils module related to the Deduplicatioin.__Main__ module?",
+        "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
         "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path",
     },
 ]
@@ -82,6 +82,7 @@ def create_text2cypher_chain(llm):
             (
                 "Given an input question, convert it to a Cypher query. No pre-amble."
                 "Do not wrap the response in any backticks or anything else. Respond with a Cypher statement only!"
+                "Do not change any node ids and labels given by the user."
             ),
         ),
         (
@@ -143,7 +144,7 @@ def create_validate_cypher_chain(llm):
         ),
     ])
 
-    return validate_cypher_prompt | llm.with_structured_output(ValidateCypherOutput)
+    return validate_cypher_prompt 
 
 def create_correct_cypher_chain(llm):
     """Create a chain for correcting Cypher queries"""
@@ -212,7 +213,7 @@ def create_generate_final_chain(llm):
 class CypherGraphBuilder:
     """Builder class for creating and managing a Cypher graph pipeline"""
     
-    def __init__(self, llm, graph_db, examples=None):
+    def __init__(self, llm, graph_db, examples=default_examples):
         """
         Initialize the Cypher Graph Builder
         
@@ -223,7 +224,7 @@ class CypherGraphBuilder:
         """
         self.llm = llm
         self.graph_db = graph_db
-        self.examples = DEFAULT_EXAMPLES
+        self.examples = examples
         self.example_selector = create_example_selector(self.examples)
         
         # Initialize chains
@@ -393,17 +394,17 @@ class CypherGraphBuilder:
         
         # Add nodes
         langgraph.add_node("generate_cypher", self.generate_cypher)
-        langgraph.add_node("validate_cypher", self.validate_cypher)
-        langgraph.add_node("correct_cypher", self.correct_cypher)
+        # langgraph.add_node("validate_cypher", self.validate_cypher)
+        # langgraph.add_node("correct_cypher", self.correct_cypher)
         langgraph.add_node("execute_cypher", self.execute_cypher)
         langgraph.add_node("generate_final_answer", self.generate_final_answer)
 
         # Add edges
         langgraph.add_edge(START, "generate_cypher")
-        langgraph.add_edge("generate_cypher", "validate_cypher")
-        langgraph.add_conditional_edges("validate_cypher", self.validate_cypher_condition)
+        langgraph.add_edge("generate_cypher", "execute_cypher")
+        # langgraph.add_conditional_edges("validate_cypher", self.validate_cypher_condition)
         langgraph.add_edge("execute_cypher", "generate_final_answer")
-        langgraph.add_edge("correct_cypher", "validate_cypher")
+        # langgraph.add_edge("correct_cypher", "validate_cypher")
         langgraph.add_edge("generate_final_answer", END)
 
         return langgraph.compile()

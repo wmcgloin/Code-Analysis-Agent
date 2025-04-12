@@ -107,12 +107,12 @@ def list_python_files(
     return python_files
 
 
-class CodeAnalysisTools:
+class ProcessMicroData:
     """
     Tools for analyzing code repositories and creating visualizations.
     """
 
-    def __init__(self, llm: BaseChatModel, llm_graph: BaseChatModel):
+    def __init__(self, llm: BaseChatModel):
         """
         Initialize the code analysis tools.
 
@@ -120,7 +120,6 @@ class CodeAnalysisTools:
             llm: The language model to use for analysis
         """
         self.llm = llm
-        self.llm_graph = llm_graph
         self.system_prompt = """
         You are an expert in analyzing Python code and generating structured natural language descriptions for graph-based querying in Cypher. 
         Given a Python codebase, extract meaningful relationships between functions, classes, and imported modules. 
@@ -198,7 +197,7 @@ class CodeAnalysisTools:
     """
 
         self.llm_transformer = LLMGraphTransformer(
-            llm=self.llm_graph,
+            llm=self.llm,
             allowed_nodes=["class", "method", "function", "package", "module"],
         )
 
@@ -330,8 +329,8 @@ class CodeAnalysisTools:
         # Add nodes and edges
         for graph in graph_documents:
             for rel in graph.relationships:
-                if rel.source.type == "Package" or rel.target.type == "Package":
-                    continue  # Skip packages entirely
+                # if rel.source.type == "Package" or rel.target.type == "Package":
+                #     continue  # Skip packages entirely
                 # Get full, unique node keys
                 source_key = make_node_key(rel.source)
                 target_key = make_node_key(rel.target)
