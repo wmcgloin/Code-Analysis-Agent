@@ -11,10 +11,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
-from langchain_anthropic import ChatAnthropic
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, StateGraph
-
+from langchain.chat_models import init_chat_model
 
 class State(TypedDict):
     """State for the RAG graph application."""
@@ -46,7 +45,7 @@ class RAGVectorDBSetup:
         self.vector_store = InMemoryVectorStore(self.embeddings)
         
         # Setup LLM for code description
-        self.llm = ChatAnthropic(model="claude-3-5-sonnet-20240620")
+        self.llm = init_chat_model("gpt-4o", model_provider="openai")
         
         # Setup LLM prompts
         self.code_description_prompt = """
@@ -162,7 +161,7 @@ class RAGQueryEngine:
     def __init__(
         self,
         vector_store: InMemoryVectorStore,
-        llm_model: str = "claude-3-5-sonnet-20240620",
+        llm_model: str = "gpt-4o",
     ):
         """
         Initialize the RAG Query Engine.
@@ -175,7 +174,7 @@ class RAGQueryEngine:
         self.llm_model = llm_model
         
         # Initialize LLM
-        self.llm = ChatAnthropic(model=llm_model)
+        self.llm = init_chat_model(llm_model, model_provider="openai")
         
         # Setup RAG prompt
         self.rag_system_prompt = """
@@ -224,7 +223,7 @@ class RAGQueryEngine:
 def create_rag_system(
     repo_path: str,
     embedding_model: str = "text-embedding-3-large",
-    llm_model: str = "claude-3-5-sonnet-20240620",
+    llm_model: str = "gpt-40",
 ) -> tuple[RAGVectorDBSetup, RAGQueryEngine]:
     """
     Create and initialize the RAG system for the given repository.

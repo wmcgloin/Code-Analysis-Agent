@@ -4,6 +4,9 @@ from typing import Annotated, Any, Dict, List
 from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import tool
 from dotenv import load_dotenv
+from utils import get_logger
+
+logger = get_logger()
 
 # You can pass the path if the file isn't in the same directory
 load_dotenv()
@@ -18,7 +21,6 @@ def retrieve_cypher_relationships(question: str):
     Returns:
         dict: A structured representation of nodes and relationships inferred from the graph.
     """
-    print("importing tools")
     from langchain_neo4j import Neo4jGraph
     from tools.micro_cypher_chain import CypherGraphBuilder
 
@@ -26,7 +28,7 @@ def retrieve_cypher_relationships(question: str):
     username = os.getenv('NEO4J_USERNAME')
     password = os.getenv('NEO4J_PASSWORD')
 
-    print("initializing Neo4jGraph")
+    logger.debug("initializing Neo4jGraph")
     graph_db = Neo4jGraph(
         url=url,
         username=username,
@@ -36,15 +38,16 @@ def retrieve_cypher_relationships(question: str):
     from langchain.chat_models import init_chat_model
     llm = init_chat_model("gpt-4o", model_provider="openai")
 
-    print("Building Cypher graph")
+    logger.debug("Building Cypher graph")
     # Create the Cypher graph
     builder = CypherGraphBuilder(llm=llm, graph_db=graph_db)
     # cypher_graph = builder.create_cypher_graph()
     cypher_graph = builder.create_cypher_graph()
 
-    print("Invoking cypher graph")
+    logger.debug("Invoking cypher graph")
     result = cypher_graph.invoke({"question": question})
-
+    logger.info(f"Tool Call: Cypher query generated -> {result}")
+    logger.info(f"Result type: {type(result)}")
     return result
 
     # Run the graph with a question
@@ -54,18 +57,17 @@ def retrieve_cypher_relationships(question: str):
 
 
 @tool
-def visualize_relationships(results):
+def visualize_relationships(results: dict):
     """
     Takes Cypher graph results and generates a local HTML visualization of the relationships.
 
     Args:
-        results (str): The entire results from the retrieve_cypher_relationships tool with no edits
+        results (dict): The entire results from the retrieve_cypher_relationships tool with no edits
 
     Returns:
         dict: Summary statistics or metadata about the rendered visualization.
     """
-    print("Visualizing relationships...")
-    print("Results:", results)
+    logger.info("Visualizing relationships...")
     import json
 
     if isinstance(results, str):
@@ -80,31 +82,34 @@ def visualize_relationships(results):
 query_engine = None
 
 @tool
-def generate_text_response(results):
+def generate_text_response(results: dict):
     """
     Builds a RAG (Retrieval-Augmented Generation) graph from the codebase, then runs a 
     natural language query against it to extract a human-readable explanation.
 
     Args:
-        results (str): The entire results from the retrieve_cypher_relationships tool with no edits
+        results (dict): The entire result from the retrieve_cypher_relationships tool with no edits
 
     Returns:
         str: Natural language answer to the predefined question.
     """
-    print("Generating text response...")
-    print("Results:", results)
-
+    logger.info("Generating text response...")
+    logger.info(f"Query engine: {query_engine}")
     if query_engine is None:
         raise ValueError("query_engine is not initialized.")
-    
+
     import json
 
     if isinstance(results, str):
+        print("Instance is a string")
         results = json.loads(results)
 
     initial_response = results["answer"]
+    # print("Initial response:", initial_response)
 
     # Query the system
     answer = query_engine.query(initial_response)
+
+    # logger.info("Answer:", answer)
 
     return answer

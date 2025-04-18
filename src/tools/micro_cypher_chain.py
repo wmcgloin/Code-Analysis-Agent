@@ -60,11 +60,23 @@ class ValidateCypherOutput(BaseModel):
 default_examples = [
     {
         "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
-        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path",
+        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
     },
     {
         "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
-        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path",
+        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
+    },
+    {
+        "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
+        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
+    },
+    {
+        "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
+        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
+    },
+    {
+        "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
+        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
     },
 ]
 
@@ -83,6 +95,7 @@ def create_text2cypher_chain(llm):
                 "Given an input question, convert it to a Cypher query. No pre-amble."
                 "Do not wrap the response in any backticks or anything else. Respond with a Cypher statement only!"
                 "Do not change any node ids and labels given by the user."
+                "Always start all Cypher statements with 'MATCH path = ' to find multiple paths."
             ),
         ),
         (
@@ -229,9 +242,7 @@ class CypherGraphBuilder:
         
         # Initialize chains
         self.text2cypher_chain = create_text2cypher_chain(llm)
-        print("done")
         self.validate_cypher_chain = create_validate_cypher_chain(llm)
-        print("done")
         self.correct_cypher_chain = create_correct_cypher_chain(llm)
         self.generate_final_chain = create_generate_final_chain(llm)
         
