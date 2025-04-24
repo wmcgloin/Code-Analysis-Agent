@@ -60,23 +60,23 @@ class ValidateCypherOutput(BaseModel):
 default_examples = [
     {
         "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
-        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
+        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..10]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 50",
+    },
+    {
+        "question": "Where is the Utils.Utils model imported?",
+        "query": "MATCH path = (m:Module {id: 'Utils.Utils'})<-[r]-(importer:Module) RETURN path LIMIT 50",
+    },
+    {
+        "question": "What functions make up the Utils.Utils.Utilities class?",
+        "query": "MATCH path = (c:Class {id: 'Utils.Utils.Utilities'})-[]-(f:Function) RETURN path LIMIT 50",
+    },
+    {
+        "question": "What classes are connected to the LSH.LSHForest module?",
+        "query": "MATCH path = (m:Module {id: 'LSH.LSHForest'})-[*..10]-(c:Class) RETURN path LIMIT 50",
     },
     {
         "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
-        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
-    },
-    {
-        "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
-        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
-    },
-    {
-        "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
-        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
-    },
-    {
-        "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
-        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN path LIMIT 10",
+        "query": "MATCH path = (m:Module {id: 'LSH.LSHForest'})-[*..10]-(c:Class) RETURN path LIMIT 10",
     },
 ]
 
@@ -92,10 +92,29 @@ def create_text2cypher_chain(llm):
         (
             "system",
             (
+                """
                 "Given an input question, convert it to a Cypher query. No pre-amble."
                 "Do not wrap the response in any backticks or anything else. Respond with a Cypher statement only!"
                 "Do not change any node ids and labels given by the user."
-                "Always start all Cypher statements with 'MATCH path = ' to find multiple paths."
+
+                Always follow the following rules below:
+
+                Query Structure:
+                    - Always begin your Cypher queries with MATCH path =.
+                Verb Generalization: 
+                    - Do not translate verbs from the question literally. For example, if the question uses "imported", avoid using :IMPORTS directly. Instead, keep the relationship unspecified (e.g., -[r]-) unless explicitly told otherwise.
+                Path Depth Rules:
+                    - For questions asking about connections or paths between entities, use a variable-length relationship of up to 10 steps: -[*..10]-.
+                    - For questions asking about definitions (e.g., what functions a class defines, what classes are in a module) or direct imports, restrict the relationship to a single step: -[]-.
+                Response Format: 
+                    - Output the Cypher query in a single line, without any line breaks or explanatory text.
+                Entity Types: 
+                    - Assume nodes in the graph can have labels like Module, Class, Function, or Package, and that edges between them can represent relationships such as function definitions, imports, usage, or dependency—though these should only be used explicitly if asked.
+                Packages Filter: 
+                    - When traversing paths, if not dealing with definitions or direct imports, ensure packages are excluded from the path unless specified.
+                """
+
+                
             ),
         ),
         (

@@ -137,14 +137,14 @@ class RAGVectorDBSetup:
             is_separator_regex=False,
         )
 
-        all_docs = []
+        self.all_docs = []
         for file_path in self.descriptions:
             docs = text_splitter.create_documents([self.descriptions[file_path]])
             for doc in docs:
                 doc.metadata['source'] = file_path
-            all_docs.extend(docs)
+            self.all_docs.extend(docs)
 
-        self.vector_store.add_documents(documents=all_docs)
+        self.vector_store.add_documents(documents=self.all_docs)
         return self.vector_store
 
     def setup_vector_database(self):
@@ -178,8 +178,16 @@ class RAGQueryEngine:
         
         # Setup RAG prompt
         self.rag_system_prompt = """
-        You are an expert in adding relevant details to a GRAPH RAG queried statement. You will be given a sentence to analyze (which is the output of a cypher query) and a context (which is additional information on the nodes and relationships). 
-        Your task is to add relevant details to the sentence to make it more informative and useful. The context will be used to provide additional information about the entities and relationships in the sentence.
+        You are an expert RAG system that specializes in answering questions or adding details to statements based on a given context.
+        You will either be given a sentence to analyze (which is the output of a cypher query) or a question to answer with context (which is additional information on the nodes and relationships). 
+        Your task is to answer the question or add relevant details to the sentence to make it more informative and useful. 
+        The context will be used to provide additional information about the entities and relationships in the sentence.
+
+        Answer in a well structured and informative yet concise manner.
+        Do not include that you added anything to the initial question or sentence.
+        Just answer the question or just enrich the sentence.
+        Do not say 'the answer is' or 'the sentence is enriched by'.
+
         Sentence to analyze: {question}
         Context: {context}
         Answer:
@@ -192,8 +200,8 @@ class RAGQueryEngine:
     
     def _retrieve(self, state: State):
         """Retrieve relevant documents based on the question."""
-        retrieved_docs = self.vector_store.similarity_search(state["question"], k=10)
-        return {"context": retrieved_docs}
+        self.retrieved_docs = self.vector_store.similarity_search(state["question"], k=10)
+        return {"context": self.retrieved_docs}
 
     def _generate(self, state: State):
         """Generate an answer based on the retrieved documents."""

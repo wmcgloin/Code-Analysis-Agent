@@ -5,6 +5,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import tool
 from dotenv import load_dotenv
 from utils import get_logger
+from typing import Optional
 
 logger = get_logger()
 
@@ -63,6 +64,7 @@ def visualize_relationships(results: dict):
 
     Args:
         results (dict): The entire results from the retrieve_cypher_relationships tool with no edits
+        question: User's Initial 
 
     Returns:
         dict: Summary statistics or metadata about the rendered visualization.
@@ -82,19 +84,22 @@ def visualize_relationships(results: dict):
 query_engine = None
 
 @tool
-def generate_text_response(results: dict):
+def generate_text_response(question: str, results: Optional[dict] = None):
     """
     Builds a RAG (Retrieval-Augmented Generation) graph from the codebase, then runs a 
     natural language query against it to extract a human-readable explanation.
 
     Args:
         results (dict): The entire result from the retrieve_cypher_relationships tool with no edits
+        question (str): User's initial question
 
     Returns:
         str: Natural language answer to the predefined question.
     """
     logger.info("Generating text response...")
     logger.info(f"Query engine: {query_engine}")
+    logger.info(f"Results: {results}")
+    logger.info(f"Question: {question}")
     if query_engine is None:
         raise ValueError("query_engine is not initialized.")
 
@@ -104,7 +109,7 @@ def generate_text_response(results: dict):
         print("Instance is a string")
         results = json.loads(results)
 
-    initial_response = results["answer"]
+    initial_response = results["answer"] if results else question
     # print("Initial response:", initial_response)
 
     # Query the system
