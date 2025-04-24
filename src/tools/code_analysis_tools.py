@@ -19,38 +19,6 @@ from utils import get_logger
 
 logger = get_logger()
 
-
-@tool
-def generate_repo_tree(
-    repo_path: Annotated[str, "Path to the repository to analyze"],
-) -> str:
-    """
-    Generate a tree representation of the repository structure.
-
-    Args:
-        repo_path: Path to the repository to analyze
-
-    Returns:
-        String representation of the repository tree
-    """
-    tree_string = ""
-    for root, dirs, files in os.walk(repo_path):
-        # Filter out __pycache__ and hidden directories
-        dirs[:] = [d for d in dirs if d != "__pycache__" and not d.startswith(".")]
-        files = [f for f in files if not f.startswith(".")]
-
-        level = root.replace(repo_path, "").count(os.sep)
-        indent = "│   " * level + "├── "  # Formatting the tree
-        tree_string += f"{indent}{os.path.basename(root)}/\n"
-
-        sub_indent = "│   " * (level + 1) + "├── "
-        for file in files:
-            tree_string += f"{sub_indent}{file}\n"
-
-        logger.debug(f"Tool Call - Repo tree generated:\n {tree_string}")
-    return tree_string
-
-
 @tool
 def read_code_file(file_path: Annotated[str, "Path to the code file to read"]) -> str:
     """

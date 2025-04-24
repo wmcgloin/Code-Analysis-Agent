@@ -28,17 +28,25 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from app.session_state import initialize_session_state
 
-from old_agent_router import create_router_graph
+from utils.repo import (
+    clone_repo_from_url,
+    delete_cloned_repo,
+    repo_exists,
+    get_cached_repo_tree,
+    REPO_DIR
+)
+
+
+from utils import LogLevel, get_logger, set_log_level
 
 from tools.code_analysis_tools import (
     explain_code_logic,
-    generate_repo_tree,
     list_python_files,
     read_code_file
 )
 import tools.micro_tools as mt
 
-from utils import LogLevel, get_logger, set_log_level
+
 
 logger = get_logger()
 set_log_level("DEBUG")
@@ -92,7 +100,7 @@ def main():
     # Ensure all required session state variables are initialized
     initialize_session_state()
     logger.info(f"Session thread_id: {st.session_state.thread_id}")
-    st.write(f"🧵 Session thread ID: `{st.session_state.thread_id}`")
+    # st.write(f"🧵 Session thread ID: `{st.session_state.thread_id}`")
 
     # Sidebar Header and Description
     st.sidebar.title("Code Analysis Agent")
@@ -115,7 +123,7 @@ def main():
         if st.button("Analyze"):
             if repo_url:
                 with st.spinner("Cloning repository..."):
-                    if clone_github_repo(repo_url):
+                    if clone_repo_from_url(repo_url):
                         st.session_state.repo_cloned = True
                         st.success("Repository cloned successfully!")
                     else:
@@ -126,7 +134,7 @@ def main():
     # Reset button: Clears graph DB, deletes repo, resets messages
     with col2:
         if st.button("Reset"):
-            if is_repo_cloned():
+            if repo_exists():
                 with st.spinner("Deleting repository and database..."):
                     try:
                         if "database" in st.session_state and st.session_state.database:
@@ -158,7 +166,7 @@ def main():
         st.sidebar.success("New conversation started.")
 
     # If repo is cloned, show repo structure & database initialization tools
-    if is_repo_cloned():
+    if repo_exists():
         with st.sidebar.expander("Repository Structure"):
             try:
                 repo_last_modified = os.path.getmtime(REPO_DIR)
@@ -192,7 +200,7 @@ def main():
 
         # Handle query depending on current state
         if user_query:
-            if is_repo_cloned():
+            if repo_exists():
                 if "database" in st.session_state and st.session_state.database:
                     # All set – process query using LangGraph router
                     process_query(user_query, REPO_DIR)
@@ -367,124 +375,6 @@ def process_query(user_query: str, repo_path: str):
         # Update the placeholder with the error message
         thinking_placeholder.markdown(error_msg)
 
-def clone_github_repo(repo_url: str) -> bool:
-    """
-    Clone a GitHub repository to the fixed repository directory.
-    
-    Args:
-        repo_url: The URL of the GitHub repository
-        
-    Returns:
-        True if successful, False otherwise
-    """
-    try:
-        # Create the directory if it doesn't exist
-        os.makedirs(REPO_DIR, exist_ok=True)
-        
-        # Clear the directory if it already exists
-        if os.path.exists(REPO_DIR) and os.listdir(REPO_DIR):
-            shutil.rmtree(REPO_DIR)
-            os.makedirs(REPO_DIR, exist_ok=True)
-        
-        # Clone the repository
-        subprocess.run(["git", "clone", repo_url, REPO_DIR], check=True)
-        
-        return True
-    except subprocess.CalledProcessError as e:
-        st.error(f"Error cloning repository: {e}")
-        return False
-    except Exception as e:
-        st.error(f"Unexpected error: {e}")
-        return False
-
-
-def delete_cloned_repo() -> bool:
-    """
-    Delete the contents of the cloned repository directory.
-    
-    Returns:
-        True if successful, False otherwise
-    """
-    try:
-        if os.path.exists(REPO_DIR):
-            # Force Git to clean up its own files first (helps with file locks)
-            try:
-                # Navigate to the repository
-                original_dir = os.getcwd()
-                os.chdir(REPO_DIR)
-                
-                # Tell Git to clean up
-                subprocess.run(["git", "gc"], check=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-                
-                # Go back to original directory
-                os.chdir(original_dir)
-            except Exception as e:
-                logger.debug(f"Error during git cleanup (non-critical): {e}")
-            
-            # On Windows, sometimes we need to retry deletion a few times
-            max_retries = 3
-            retry_delay = 1  # seconds
-            
-            for retry in range(max_retries):
-                try:
-                    # First try to remove the .git folder which often causes problems
-                    git_dir = os.path.join(REPO_DIR, ".git")
-                    if os.path.exists(git_dir):
-                        # Make sure all files are writable
-                        for root, dirs, files in os.walk(git_dir):
-                            for file in files:
-                                file_path = os.path.join(root, file)
-                                try:
-                                    os.chmod(file_path, 0o666)  # Make file writable
-                                except:
-                                    pass  # Ignore errors
-                                    
-                        # Try to delete the .git directory
-                        shutil.rmtree(git_dir, ignore_errors=True)
-                    
-                    # Now try to delete everything else
-                    for item in os.listdir(REPO_DIR):
-                        item_path = os.path.join(REPO_DIR, item)
-                        if os.path.isdir(item_path):
-                            shutil.rmtree(item_path, ignore_errors=True)
-                        else:
-                            try:
-                                os.chmod(item_path, 0o666)  # Make file writable
-                                os.remove(item_path)
-                            except:
-                                pass  # Ignore errors
-                    
-                    # Check if we successfully cleaned up
-                    remaining = [f for f in os.listdir(REPO_DIR) if f != '.git']
-                    if not remaining:
-                        return True
-                    
-                    # If we still have files, wait and retry
-                    time.sleep(retry_delay)
-                    
-                except Exception as e:
-                    logger.debug(f"Delete retry {retry+1} failed: {e}")
-                    time.sleep(retry_delay)
-            
-            # If we get here, we couldn't clean everything, but return true anyway
-            # and just log a warning
-            logger.warning("Could not delete all repository files, but continuing anyway")
-            return True
-            
-        return True
-    except Exception as e:
-        st.error(f"Error deleting repository contents: {e}")
-        return False
-
-
-def is_repo_cloned() -> bool:
-    """
-    Check if a repository is currently cloned.
-    
-    Returns:
-        True if a repository is cloned, False otherwise
-    """
-    return os.path.exists(REPO_DIR) and len(os.listdir(REPO_DIR)) > 0
 
 
 
@@ -712,24 +602,6 @@ def display_visualization():
                         height=400,  # Adjust height to fit in sidebar
                         scrolling=True
                     )
-
-
-
-# Create a cached version of the repo tree generator
-@st.cache_data
-def get_cached_repo_tree(repo_path, last_modified=None):
-    """
-    Generate and cache the repository tree.
-    
-    Args:
-        repo_path: Path to the repository
-        last_modified: A value that changes when the repo is modified
-        
-    Returns:
-        String representation of the repo tree
-    """
-    return generate_repo_tree(repo_path)
-
 
 
 

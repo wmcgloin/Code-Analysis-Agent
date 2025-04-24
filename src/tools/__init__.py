@@ -2,12 +2,10 @@
 Tools package initialization.
 """
 
-from .code_analysis_tools import (CodeAnalysisTools, explain_code_logic,
-                                  generate_repo_tree, list_python_files,
+from .code_analysis_tools import (CodeAnalysisTools, explain_code_logic, list_python_files,
                                   read_code_file)
 
 __all__ = [
-    "generate_repo_tree",
     "read_code_file",
     "list_python_files",
     "explain_code_logic",
