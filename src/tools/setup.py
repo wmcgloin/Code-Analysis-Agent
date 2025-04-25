@@ -7,11 +7,15 @@ and provide textual explanations of code structure and relationships.
 """
 
 from typing import Dict, List
-from langchain_core.tools import BaseTool  # If using custom tool classes, adjust accordingly
 
+from langchain_core.tools import \
+    BaseTool  # If using custom tool classes, adjust accordingly
+
+# add macro tools
+import tools.macro.tools as mat
 # Import micro-level tool functions from your local tools module
 import tools.micro.tools as mt
-# add macro tools
+
 
 def setup_analysis_tools() -> Dict[str, List[BaseTool]]:
     """
@@ -29,6 +33,8 @@ def setup_analysis_tools() -> Dict[str, List[BaseTool]]:
     # Placeholder macro tools – these can be populated when repo-level logic is needed
     macro_tools: List[BaseTool] = [
         # Example (commented out until implemented or needed):
+        mat.generate_text_response,
+        mat.generate_mermaid_diagram,
         # generate_repo_tree,
         # read_code_file,
         # list_python_files,
@@ -42,7 +48,4 @@ def setup_analysis_tools() -> Dict[str, List[BaseTool]]:
         mt.generate_text_response,
     ]
 
-    return {
-        "macro_tools": macro_tools,
-        "micro_tools": micro_tools
-    }
+    return {"macro_tools": macro_tools, "micro_tools": micro_tools}
