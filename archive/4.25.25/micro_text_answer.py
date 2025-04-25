@@ -263,4 +263,3 @@ def create_rag_system(
     
     return db_setup, query_engine
 
-
