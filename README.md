@@ -1,46 +1,94 @@
-# DSAN 6725 final project
+# Code Analysis Agent
 
-This repository contains information about deliverables, project ideas and all things related to the final project.
+A LangGraph + Streamlit application for interactive **codebase analysis** and **querying**.
 
+This project builds a system that:
+- **Analyzes** Python codebases into semantic graphs (using LLMs and Neo4j)
+- **Visualizes** module and function relationships interactively
+- **Queries** the codebase using an agentic Graph + Retrieval-Augmented Generation (RAG) workflow
 
-## Overview
+## Project Structure
 
-DSAN 6725 is an applied AI course, while the focus is on building useful things with AI but more foundational work on benchmarking, fine-tuning, optimization strategies for inference, exploration of newer open-source frameworks for building applications and so on and so forth is highly encouraged.
+```
+src/
+├── agent_router/         # LangGraph agent router
+│   ├── graph.py
+│   ├── nodes.py
+│   ├── state.py
+├── app/                  # Streamlit app logic
+│   ├── graph_builders/    # Codebase graph construction
+│   │   └── micro_graph_builder.py
+│   ├── handlers/         # Query handling and processing
+│   │   └── query_handler.py
+│   ├── setup/            # Database initialization utilities
+│   │   └── initialize_database.py
+│   ├── ui/               # Frontend (chat, visualization)
+│   │   ├── chat.py
+│   │   └── visualization.py
+│   └── session_state.py  # Session state management
+├── rag/                  # RAG system setup
+│   └── vector_rag.py
+├── tools/                # Tools for LangGraph agents
+│   ├── micro/            # Micro agent tools (Cypher, RAG)
+│   │   ├── cypher_query_builder.py
+│   │   ├── cypher_visualizer.py
+│   │   └── tools.py
+│   ├── macro/            # (reserved for future macro agent tools)
+│   │   └── tools.py
+├── utils/                # Utilities
+│   ├── filesystem.py
+│   ├── logger.py
+│   └── repo.py
+├── streamlit_app.py       # Main Streamlit application entrypoint
+```
 
-The is repo provides some project ideas but you are not limited to just these, you can explore other ideas but it would be incumbent upon you (your team) to discuss these ideas and get approval before proceeding. The ideas suggested here are practically useful, of course there are hundreds of others ideas which are probably even more useful, so explore more by all means but we do want to lock down on a project idea which has a reasonable chance of success in 6-weeks give or take so please keep that in mind.
+## Key Features
 
-This repo is organized into the following parts:
+- **Multi-stage code analysis:**
+  - Natural language descriptions of Python code.
+  - Conversion to graph structures stored in Neo4j.
+  - RAG system for flexible natural language queries.
 
-- [Project ideas](#project-ideas)
-- [Deliverables](#deliverables)
-- [FAQ](#faq)
-- [Resources](#resources)
+- **LangGraph Agent Router:**
+  - Routes queries dynamically to micro agent tools.
+  - Supports Cypher relationship retrieval, visualization, and free-text explanation.
 
-## Project Ideas
+- **Interactive Streamlit Interface:**
+  - Clone GitHub repositories.
+  - Select folders to initialize analysis.
+  - Visualize code structures live.
+  - Chat with your codebase.
 
-**NOTE**: These project ideas have well-defined problem statements, but the implementation details are flexible and open to creative solutions. Use the description provided for each of these projects as springboards for your own ways to solve these problems.
+## Getting Started
 
-- [Gen AI AI-Powered Code Refactoring & Dependency Updater](./AI_code_refactoring.md)
-- [Gen AI agent for data engineering](./Data_engineering_agent.md)
-- [Question-Answering Slackbot for a DSAN Slack Channel](./QA_slackbot.md)
-- [Fine-Tune an Embeddings Model and Show Retrieval Accuracy Improvements](./Embedding_Model_FineTuning.md)
-- [Study how different models perform on Agent evaluation benchmarks](./benchmarks.md)
+1. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-## Deliverables
+2. Set up environment variables (e.g., Neo4j credentials) in a `.env` file:
+```bash
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=your_password
+OPENAI_API_KEY=your_openai_key
+```
 
-All deliverables are described [here](./deliverables.md).
+3. Run the Streamlit app:
+```bash
+streamlit run src/streamlit_app.py
+```
 
-## FAQ
+## Notes
+- Requires a running Neo4j instance.
+- Assumes Python 3.11+.
+- Optimized for small-to-medium Python codebases (<10k files).
 
-`Question`: Can I do this project alone as a single person team? Can there be more than 4 people in a team?<br>
-`Answer`: No and no.
+## Future Extensions
+- Add macro-level graph building.
+- Improve multi-agent coordination.
+- Support additional graph visualizations.
 
-`Question`: Can I use OpenAI for my project?<br>
-`Answer`: You have a paid plan for their API, go for it. In this class though we won't be covering it.
+---
 
-`Question`: Can I use generative AI to help me with my project?<br>
-`Answer`: If you want to use it in a non-substantial way then yes, see [this section](https://gu-dsan.github.io/6725-spring-2025/syllabus.html#use-of-generative-ai-tools) from the syllabus. As I have always stated in the class that if you use it as a productivity assistant then yes, if you use it do your work then _A) you learn nothing and B) this is considered plagiarism_.
-
-## Resources
-
-Our very own [`bookmarks`](https://github.com/gu-dsan6725/bookmarks/tree/main) repo.
+Built with ❤️ using LangChain, LangGraph, Neo4j, and Streamlit.

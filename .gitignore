@@ -177,3 +177,6 @@ docs/notebooks/assignment-2-mcdonald-s/
 # OS specific files
 .DS_Store
 output
+
+cloned_repository/
+code_relationships_graph.html

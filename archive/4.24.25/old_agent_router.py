@@ -47,15 +47,16 @@ def create_supervisor_node(llm: BaseChatModel) -> callable:
         You have two agents available:
         
         1. micro: This agent analyzes code repositories and creates detailed semantic relationship graphs
-           showing how classes, methods, and functions correlate to each other. It provides a comprehensive view
-           of the codebase's structure and relationships.
+           showing how classes, methods, and functions are related to each other. It provides a comprehensive view
+           of the codebase's structure and relationships. It is capable of generating text responses with visualizations
+           when the user requests them.
            
         2. macro: This agent analyzes code repositories and creates high-level logical relationship graphs
            showing how files, components, modules, and concepts correlate to each other. It aims to create a simplified
            abstraction with minimal nodes (fewer than 5 for small codebases) for a quick overview.
         
         If the user wants detailed information about code structure, relationships between specific classes or methods,
-        or a comprehensive view of the codebase, choose the micro.
+        or a comprehensive visualization of the codebase, choose the micro.
         
         If the user wants a high-level overview, abstraction, or simplified representation of the codebase's logical
         structure with minimal nodes, choose the macro.
@@ -130,16 +131,17 @@ def create_agent_node(
         Always provide clear, structured responses with your analysis and recommendations. Also respond complete once the generation is completed.
         """
     else:  # micro agent
-        system_prompt = """
-        You are a micro-level tactical agent. You excel at:
-        - Implementing specific solutions
-        - Handling detailed calculations and analysis
-        - Executing precise tasks
-        - Working with concrete data and specifications
-        
-        Focus on detailed implementation and execution. For high-level planning,
-        defer to the macro agent.
-        
+        system_prompt = f"""
+        You are a suupervisor that answers the questions given the following tools.
+        {tools}
+
+        You will use each tool only once and the guidelines of the tools are as follows:
+        - You will always use the retrieve_cypher_relationships tool to get an initial answer.
+        - You will always use the generate_text_response tool to get a final answer.
+        - Only use the visualize_relationships tool to visualize the relationships when the user asks for a visualization.
+
+        USE EACH TOOL ONLY ONCE.
+
         Always provide clear, actionable responses with specific details and implementation steps.
         """
 
@@ -176,6 +178,9 @@ def create_agent_node(
     return agent_node
 
 
+from langgraph.checkpoint.memory import MemorySaver
+memory = MemorySaver()
+
 def create_router_graph(
     llm: BaseChatModel,
     macro_tools: List[BaseTool] = None,
@@ -209,4 +214,4 @@ def create_router_graph(
 
     # Compile the graph
     logger.info("Compiling the router graph...")
-    return builder.compile()
+    return builder.compile(checkpointer=memory)
