@@ -29,6 +29,10 @@ from utils import get_logger
 # Set up module-wide logger
 logger = get_logger()
 
+EXCLUDED_DIRS = {
+    "__pycache__", ".git", ".venv", "legacy", "archive", "archived", "old", ".mypy_cache","dsan6725", "DSAN6725"
+}
+
 class State(TypedDict):
     """LangGraph application state for semantic code queries."""
     question: str
@@ -82,7 +86,7 @@ class RAGVectorDBSetup:
             self.repo_tree = generate_repo_tree(self.repo_path)
 
         for root, dirs, files in os.walk(self.repo_path):
-            dirs[:] = [d for d in dirs if not d.startswith(".") and d != "__pycache__"]
+            dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS and not d.startswith(".")]
             for file in files:
                 # Only process Python files and other text files for code analysis
                 if (file.startswith(".") or 
@@ -101,6 +105,8 @@ class RAGVectorDBSetup:
                 file_path = os.path.join(root, file)
                 relative_path = os.path.relpath(file_path, self.repo_path)
                 rel_path = relative_path.replace("\\", ".")  # Normalize for module names
+
+                logger.debug(f"Generating description for {file_path}")
 
                 try:
                     with open(file_path, "r", encoding="utf-8") as f:
@@ -121,6 +127,8 @@ class RAGVectorDBSetup:
                     ]
                     response = self.llm.invoke(messages)
                     descriptions[rel_path] = response.content
+
+                    
 
                 except Exception as e:
                     print(f"Error processing {file_path}: {e}")
@@ -150,9 +158,11 @@ class RAGVectorDBSetup:
             docs = splitter.create_documents([description])
             for doc in docs:
                 doc.metadata["source"] = file_path
-            logger.debug(f"Adding {len(docs)} chunks for {file_path} to vector store")
-
+            
+            logger.debug(f"Processed {file_path} into {len(docs)} chunks")
+            
             self.vector_store.add_documents(all_docs)
+            logger.debug(f"Adding {len(docs)} chunks for {file_path} to vector store")
 
         #     all_docs.extend(docs)
             
