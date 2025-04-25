@@ -92,7 +92,10 @@ def generate_text_response(question: str):
         3. Entry points and important components
         
         Format your response with clear sections and use bullet points where appropriate. Make sure your description 
-        of relationships is clear enough to be parsed for creating a mermaid diagram.""",
+        of relationships is clear enough to be parsed for creating a mermaid diagram.
+        
+        The response should be very concise. Based on the length of the query, you may need to summarize the codebase more for small amount of texts.
+        """,
             ),
             (
                 "human",
@@ -104,7 +107,7 @@ def generate_text_response(question: str):
         Here are the contents of key files:
         {file_contents}
         
-        Please provide a comprehensive analysis that describes the modules, their relationships, and the overall architecture.
+        Please provide a concise analysis that describes the overall architecture.
         Make sure your description is suitable for generating a mermaid diagram.""",
             ),
         ]
@@ -152,6 +155,8 @@ def generate_mermaid_diagram(text: str):
         4. Include a legend if necessary
         5. Keep the diagram clean and readable
         
+        Please generate a valid mermaid diagram. Escape or don't include special charachters like (, ), that are not supported by mermaid. 
+
         Return ONLY the mermaid diagram code without any additional explanation.""",
             ),
             (
