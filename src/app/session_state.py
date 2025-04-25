@@ -5,7 +5,9 @@ Handles:
 - Initializing session state variables (thread ID, messages, graph router, etc.)
 - Setting up cleanup routines to delete cloned repos and clear the Neo4j database
 """
-
+import os
+import shutil
+import time
 import uuid
 import streamlit as st
 from utils import get_logger, set_log_level
@@ -122,10 +124,6 @@ def cleanup_repo():
     Deletes all files from the cloned repository directory.
     Handles edge cases like locked Git objects or Windows permission errors.
     """
-    import os
-    import shutil
-    import time
-
     try:
         if os.path.exists(REPO_DIR):
             # Step 1: Try to remove .git directory (can cause lock issues)
