@@ -1,15 +1,44 @@
+"""
+Micro Agent Tools
 
+This module defines tools for the LangGraph micro agent to:
+- Retrieve Cypher relationships from a Neo4j database
+- Generate visualizations of code relationships
+- Perform RAG-based text generation over graph outputs
+
+It also manages a shared `query_engine` instance used for natural language querying.
+"""
+
+
+# Standard Library
 import os
+import json
 from typing import Annotated, Any, Dict, List
+
+# Third-Party Libraries
+from dotenv import load_dotenv
 from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import tool
-from dotenv import load_dotenv
-from utils import get_logger
+from langchain.chat_models import init_chat_model
+from langchain_neo4j import Neo4jGraph
 
+# Internal Utilities
+from utils import get_logger
+from tools.micro_cypher_chain import CypherGraphBuilder
+from tools.micro_visual_response import visualize_cypher_results
+
+
+# Initialization
+# Load environment variables from .env file
+load_dotenv()
+
+# Set up module-wide logger
 logger = get_logger()
 
-# You can pass the path if the file isn't in the same directory
-load_dotenv()
+# Global query engine (set externally during database initialization)
+query_engine = None
+
+
 
 
 @tool
@@ -21,9 +50,6 @@ def retrieve_cypher_relationships(question: str):
     Returns:
         dict: A structured representation of nodes and relationships inferred from the graph.
     """
-    from langchain_neo4j import Neo4jGraph
-    from tools.micro_cypher_chain import CypherGraphBuilder
-
     url = os.getenv('NEO4J_URI')
     username = os.getenv('NEO4J_USERNAME')
     password = os.getenv('NEO4J_PASSWORD')
@@ -35,7 +61,6 @@ def retrieve_cypher_relationships(question: str):
         password=password,
         enhanced_schema=True
     )
-    from langchain.chat_models import init_chat_model
     llm = init_chat_model("gpt-4o", model_provider="openai")
 
     logger.debug("Building Cypher graph")
@@ -54,8 +79,6 @@ def retrieve_cypher_relationships(question: str):
     # result = cypher_graph.invoke({"question": "How is the Utils.Utils module related to the Deduplicatioin.__Main__ module?"})
     # print(result["answer"])
     
-
-
 @tool
 def visualize_relationships(results: dict):
     """
@@ -68,18 +91,16 @@ def visualize_relationships(results: dict):
         dict: Summary statistics or metadata about the rendered visualization.
     """
     logger.info("Visualizing relationships...")
-    import json
 
     if isinstance(results, str):
         results = json.loads(results)
 
     cypher_results = results["cypher_results"]
 
-    from tools.micro_visual_response import visualize_cypher_results
+    
     stats = visualize_cypher_results(cypher_results, "code_relationships_graph.html")
     return stats # Not really necessary
 
-query_engine = None
 
 @tool
 def generate_text_response(results: dict):
@@ -98,7 +119,6 @@ def generate_text_response(results: dict):
     if query_engine is None:
         raise ValueError("query_engine is not initialized.")
 
-    import json
 
     if isinstance(results, str):
         print("Instance is a string")

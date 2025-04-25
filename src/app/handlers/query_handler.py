@@ -1,7 +1,20 @@
+"""
+Query Handler Module
+
+This script defines the `process_query` function, which manages the end-to-end flow of user queries:
+- Updates conversation history
+- Connects the appropriate query engine from the database to the tool layer
+- Invokes the LangGraph agent router to generate a response
+- Displays assistant thinking and final output messages
+
+It acts as the bridge between the Streamlit UI and the LangGraph agent's underlying tool and database systems.
+"""
+
+
 from langchain_core.messages import AIMessage, HumanMessage
 import streamlit as st
 import logging
-from tools import micro_tools
+import tools.micro.tools as mt
 from app.ui import display_messages
 
 logger = logging.getLogger(__name__)
@@ -20,13 +33,12 @@ def process_query(user_query: str, repo_path: str):
     # Connect query engine to micro_tools before each query
     if "query_engines" in st.session_state.database and st.session_state.database["query_engines"]:
         try:
-            from tools import micro_tools
             # Get the first available query engine
             first_engine_key = list(st.session_state.database["query_engines"].keys())[0]
             query_engine = st.session_state.database["query_engines"][first_engine_key]
             
             # Set it in the micro_tools module
-            micro_tools.query_engine = query_engine
+            mt.query_engine = query_engine
             logger.debug(f"Query engine from {first_engine_key} connected to micro_tools")
         except Exception as e:
             logger.error(f"Failed to connect query engine to tools: {e}")
@@ -58,7 +70,7 @@ def process_query(user_query: str, repo_path: str):
     #     # Import and set up micro_tools to use our query engine
     #     try:
     #         from tools import micro_tools
-    #         micro_tools.query_engine = query_engine
+    #         mt.query_engine = query_engine
     #         logger.debug("RAG query engine made available to router")
     #     except Exception as e:
     #         logger.error(f"Failed to make query engine available to router: {e}")

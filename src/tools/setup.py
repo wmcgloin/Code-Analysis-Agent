@@ -10,10 +10,8 @@ from typing import Dict, List
 from langchain_core.tools import BaseTool  # If using custom tool classes, adjust accordingly
 
 # Import micro-level tool functions from your local tools module
-# (Assumes these are defined with LangChain-compatible interfaces)
-import tools.micro_tools as mt
-# If macro tools are ever added, they can be imported here similarly:
-# from tools.code_analysis_tools import generate_repo_tree, read_code_file, ...
+import tools.micro.tools as mt
+# add macro tools
 
 def setup_analysis_tools() -> Dict[str, List[BaseTool]]:
     """
