@@ -26,29 +26,17 @@ from langchain_anthropic import ChatAnthropic  # unused
 from langchain.chat_models import init_chat_model # may not be needed in main loop
 from langchain_core.messages import AIMessage, HumanMessage
 
-from app.session_state import initialize_session_state
-
-from utils.repo import (
-    clone_repo_from_url,
-    delete_cloned_repo,
-    repo_exists,
-    get_cached_repo_tree,
-    REPO_DIR
-)
-
-
+from app.session_state import initialize_session_state, cleanup_repo
+from app.setup import initialize_database
+from app.ui import display_messages, display_visualization
+from app.handlers import process_query
+from utils.repo import (clone_repo_from_url, delete_cloned_repo, repo_exists, get_cached_repo_tree, REPO_DIR)
 from utils import LogLevel, get_logger, set_log_level
-
-from app.setup.initialize_database import initialize_database
-
-
-import tools.micro_tools as mt
 
 
 
 logger = get_logger()
 set_log_level("DEBUG")
-
 
 # Set page configuration
 st.set_page_config(
@@ -58,28 +46,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-from app.session_state import cleanup_repo
 # Register cleanup function to run on process exit
 atexit.register(lambda: cleanup_repo())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def main():
@@ -132,12 +100,19 @@ def main():
             if repo_exists():
                 with st.spinner("Deleting repository and database..."):
                     try:
+                        # Clear Neo4j database if initialized
                         if "database" in st.session_state and st.session_state.database:
                             graph_db = st.session_state.database.get("graph_db")
                             if graph_db:
                                 graph_db.query("MATCH (n) DETACH DELETE n")
                                 st.success("Graph database cleared!")
                                 logger.debug("Neo4j DB cleared")
+
+                        # Delete HTML visualization file
+                        if os.path.exists("code_relationships_graph.html"):
+                            os.remove("code_relationships_graph.html")
+                            logger.debug("Visualization file deleted")
+                            
                     except Exception as e:
                         logger.error(f"Error clearing Neo4j DB: {e}")
                         st.error(f"Failed to clear Neo4j database: {e}")
@@ -176,10 +151,11 @@ def main():
         # UI for initializing database from user-selected folders
         st.sidebar.subheader("Database Initialization")
         src_folders = st.sidebar.text_input(
-            "Source folders (comma-separated)",
-            help="e.g., src,app/lib, or . for root",
-            placeholder="src,app/src,lib"
+            "Source folder (relative path)",
+            help="Enter a single folder to analyze, such as `src` or `.` for the repo root.",
+            placeholder="e.g. src, backend/api, ."
         )
+
         if st.sidebar.button("Initialize Database"):
             if src_folders:
                 folder_list = [f.strip() for f in src_folders.split(",")]
@@ -212,255 +188,6 @@ def main():
         else:
             # No new input – show chat history
             display_messages()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def display_visualization():
-    """Display visualization controls in the sidebar."""
-    if os.path.exists("code_relationships_graph.html"):
-        # Create a container for the visualization controls in the sidebar
-        st.sidebar.subheader("Code Visualization")
-        
-        # Option to display the visualization inline
-        if st.sidebar.button("Show/Hide Visualization"):
-            if "show_visualization" not in st.session_state:
-                st.session_state.show_visualization = True
-            else:
-                st.session_state.show_visualization = not st.session_state.show_visualization
-            
-            # Provide feedback on current state
-            if st.session_state.show_visualization:
-                st.sidebar.success("Visualization shown below")
-            else:
-                st.sidebar.info("Visualization hidden")
-        
-        # Download button for the HTML file
-        with open("code_relationships_graph.html", "rb") as file:
-            st.sidebar.download_button(
-                label="Download Visualization",
-                data=file,
-                file_name="code_relationships_graph.html",
-                mime="text/html"
-            )
-        
-        # Display visualization in the sidebar if show_visualization is True
-        if "show_visualization" in st.session_state and st.session_state.show_visualization:
-            # Create a container for the visualization in the sidebar
-            st.sidebar.markdown("### Visualization Preview")
-            
-            # Read and display the HTML content in an iframe within the sidebar
-            with open("code_relationships_graph.html", "r", encoding="utf-8") as file:
-                html_content = file.read()
-                
-                # Create a container in the sidebar for the visualization
-                sidebar_container = st.sidebar.container()
-                
-                # Use st.components.v1.html within the sidebar container
-                with sidebar_container:
-                    import streamlit.components.v1 as components
-                    components.html(
-                        html_content, 
-                        height=400,  # Adjust height to fit in sidebar
-                        scrolling=True
-                    )
-
-
-
-
-def process_query(user_query: str, repo_path: str):
-    """
-    Process a user query using the agent router.
-    """
-    # Check if database is initialized
-    if not "database" in st.session_state or not st.session_state.database:
-        # Add messages to session state only, don't display them here
-        st.session_state.messages.append(HumanMessage(content=user_query))
-        st.session_state.messages.append(AIMessage(content="Please initialize the database first before asking questions."))
-        return
-    
-    # Connect query engine to micro_tools before each query
-    if "query_engines" in st.session_state.database and st.session_state.database["query_engines"]:
-        try:
-            from tools import micro_tools
-            # Get the first available query engine
-            first_engine_key = list(st.session_state.database["query_engines"].keys())[0]
-            query_engine = st.session_state.database["query_engines"][first_engine_key]
-            
-            # Set it in the micro_tools module
-            micro_tools.query_engine = query_engine
-            logger.debug(f"Query engine from {first_engine_key} connected to micro_tools")
-        except Exception as e:
-            logger.error(f"Failed to connect query engine to tools: {e}")
-    
-    # Add repository path to the query
-    full_query = f"{user_query}"
-
-    # Add the user message to the conversation history
-    user_message = HumanMessage(content=full_query)
-    st.session_state.messages.append(user_message)
-    
-    # Display messages up to this point (including the new user message)
-    display_messages()
-    
-    # Create a placeholder for the assistant's thinking message
-    with st.chat_message("assistant"):
-        thinking_placeholder = st.empty()
-        thinking_placeholder.markdown("*Thinking...*")
-
-    # Initialize the state with the user query
-    initial_state = {"messages": [user_message]}
-
-    # # Make query engine available to the router if needed
-    # if "query_engines" in st.session_state.database and st.session_state.database["query_engines"]:
-    #     # Add the first query engine to the initial state (can be expanded to include all engines)
-    #     first_engine_key = list(st.session_state.database["query_engines"].keys())[0]
-    #     query_engine = st.session_state.database["query_engines"][first_engine_key]
-        
-    #     # Import and set up micro_tools to use our query engine
-    #     try:
-    #         from tools import micro_tools
-    #         micro_tools.query_engine = query_engine
-    #         logger.debug("RAG query engine made available to router")
-    #     except Exception as e:
-    #         logger.error(f"Failed to make query engine available to router: {e}")
-
-    
-    config = {"configurable": {"thread_id": st.session_state.thread_id}}
-
-    # Process the query with the agent router
-    # Debug message to track execution
-    logger.debug("Starting to process query with agent router using invoke()")
-
-    # Store all messages from the execution
-    all_messages = []
-    final_response = None
-
-    # Process the query using invoke() instead of stream()
-    try:
-        logger.info(f"Configuration thread_id: {config}")
-        result = st.session_state.graph.invoke(initial_state, config=config)
-
-        # Log the result for debugging
-        logger.debug(f"Graph execution completed. Result type: {type(result)}")
-
-        # Extract messages from the result
-        if "messages" in result:
-            all_messages = result["messages"]
-            logger.debug(f"Found {len(all_messages)} messages in result")
-
-            # Find the last non-supervisor message from an agent
-            for message in reversed(all_messages):
-                if (
-                    hasattr(message, "name")
-                    and message.name != "supervisor"
-                    and isinstance(message, AIMessage)
-                ):
-                    final_response = message.content
-                    logger.debug(
-                        f"Found response from {message.name}: {final_response[:100]}..."
-                    )
-                    break
-
-        # Add the response to session state
-        if final_response:
-            st.session_state.messages.append(AIMessage(content=final_response))
-            # Update the placeholder with the final response
-            thinking_placeholder.markdown(final_response)
-        else:
-            logger.warning("No agent response found")
-            error_msg = "I'm sorry, I couldn't generate a response. Please try again."
-            st.session_state.messages.append(AIMessage(content=error_msg))
-            # Update the placeholder with the error message
-            thinking_placeholder.markdown(error_msg)
-
-            # Debug the messages to understand why no response was found
-            if all_messages:
-                logger.debug("All messages in result:")
-                for i, msg in enumerate(all_messages):
-                    msg_type = type(msg).__name__
-                    msg_name = getattr(msg, "name", "unknown")
-                    logger.debug(
-                        f"  [{i}] {msg_type} ({msg_name}): {msg.content[:100]}..."
-                        if len(msg.content) > 100
-                        else f"  [{i}] {msg_type} ({msg_name}): {msg.content}"
-                    )
-
-    except Exception as e:
-        logger.error(f"Error processing query: {str(e)}")
-        error_msg = f"An error occurred: {str(e)}"
-        st.session_state.messages.append(AIMessage(content=error_msg))
-        # Update the placeholder with the error message
-        thinking_placeholder.markdown(error_msg)
-
-
-
-def display_messages():
-    """Display the conversation history."""
-    for message in st.session_state.messages:
-        if isinstance(message, HumanMessage):
-            with st.chat_message("user"):
-                st.write(message.content)
-        else:
-            with st.chat_message("assistant"):
-                st.write(message.content)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
