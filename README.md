@@ -84,7 +84,7 @@ streamlit run src/streamlit_app.py
 
 ## Notes
 - Requires a running Neo4j instance.
-- Assumes Python 3.11+.
+- Assumes Python 3.10+.
 - Optimized for small-to-medium Python codebases (<10k files).
 - OpenAI API (GPT-4o) is used for LLM-based analysis.
 
