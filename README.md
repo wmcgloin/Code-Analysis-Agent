@@ -49,7 +49,7 @@ src/
 - **Multi-stage code analysis:**
   - Extracts natural language descriptions of classes, functions, and modules.
   - Converts codebases into semantic graph structures stored in Neo4j.
-  - uilds a RAG system for flexible natural language querying.
+  - Builds a RAG system for flexible natural language querying.
 
 - **LangGraph Multi-Agent Router:**
   - Routes queries dynamically between *micro-level* (fine-grained) and *macro-level* (big picture) tools.
