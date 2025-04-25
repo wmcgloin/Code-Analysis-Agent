@@ -84,7 +84,19 @@ class RAGVectorDBSetup:
         for root, dirs, files in os.walk(self.repo_path):
             dirs[:] = [d for d in dirs if not d.startswith(".") and d != "__pycache__"]
             for file in files:
-                if file.startswith("."):
+                # Only process Python files and other text files for code analysis
+                if (file.startswith(".") or 
+                    not file.endswith(('.py', '.md', '.txt', '.yaml', '.yml'))):
+                    continue
+                    
+                # Add a file size check to avoid large files
+                file_path = os.path.join(root, file)
+                try:
+                    if os.path.getsize(file_path) > 1_000_000:  # Skip files larger than 1MB
+                        print(f"Skipping large file: {file_path}")
+                        continue
+                except Exception as e:
+                    print(f"Error checking file size {file_path}: {e}")
                     continue
                 file_path = os.path.join(root, file)
                 relative_path = os.path.relpath(file_path, self.repo_path)

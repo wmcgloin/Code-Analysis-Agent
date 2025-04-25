@@ -62,6 +62,7 @@ def initialize_database(repo_path: str, src_folders: List[str]) -> Dict:
             folder_path = os.path.join(repo_path, folder)
             if os.path.exists(folder_path):
                 python_files = list_python_files(folder_path)
+                python_files = [f for f in python_files if f.endswith('.py')]
                 total_files_count += len(python_files)
         
         status.update(label=f"Found {total_files_count} Python files to analyze across {len(src_folders)} folders", state="running")
@@ -87,8 +88,20 @@ def initialize_database(repo_path: str, src_folders: List[str]) -> Dict:
             if total_files_count > 0:
                 progress_bar.progress(min(total_files_processed / total_files_count, 1.0))
                 
-            # Call original function
-            return original_read_code_file(file_path)
+            # Try to read the file safely
+            try:
+                content = original_read_code_file(file_path)
+
+                # Optional: add a safeguard against extremely large files
+                if len(content) > 100_000:  # 100 KB text
+                    logger.warning(f"Skipping very large file: {rel_path} ({len(content)} characters)")
+                    return None
+
+                return content
+
+            except Exception as e:
+                logger.error(f"Failed to read {rel_path}: {e}")
+                return None
         
         # Process each folder with progress tracking
         total_folders = len(src_folders)

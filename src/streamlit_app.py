@@ -86,6 +86,11 @@ def main():
         if st.button("Analyze"):
             if repo_url:
                 with st.spinner("Cloning repository..."):
+                    # delete the html file if it exists
+                    if os.path.exists("code_relationships_graph.html"):
+                        os.remove("code_relationships_graph.html")
+                        logger.debug("Visualization file deleted")
+                    # clone repo
                     if clone_repo_from_url(repo_url):
                         st.session_state.repo_cloned = True
                         st.success("Repository cloned successfully!")
