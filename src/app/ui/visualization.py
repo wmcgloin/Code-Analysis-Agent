@@ -1,46 +1,48 @@
 # app/ui/visualization.py
 
 import os
+
 import streamlit as st
 import streamlit.components.v1 as components
 
 
 def display_visualization():
     """Display visualization controls and preview in the sidebar."""
-    if os.path.exists("code_relationships_graph.html"):
-        st.sidebar.subheader("Code Visualization")
 
-        # Show/hide toggle
-        if st.sidebar.button("Show/Hide Visualization"):
-            if "show_visualization" not in st.session_state:
-                st.session_state.show_visualization = True
-            else:
-                st.session_state.show_visualization = not st.session_state.show_visualization
+    graph_path = "code_relationships_graph.html"
+    structure_path = "codebase_structure.html"
 
-            if st.session_state.show_visualization:
-                st.sidebar.success("Visualization shown below")
-            else:
-                st.sidebar.info("Visualization hidden")
+    # Available visualizations
+    available_options = {
+        "Code Relationships Graph": graph_path,
+        "Codebase Structure": structure_path,
+    }
 
+    st.sidebar.subheader("Code Visualization")
+
+    # Select which visualization to view
+    selected_name = st.sidebar.selectbox(
+        "Select Visualization", list(available_options.keys())
+    )
+
+    selected_file = available_options[selected_name]
+
+    try:
         # Download button
-        with open("code_relationships_graph.html", "rb") as file:
+        with open(selected_file, "rb") as file:
             st.sidebar.download_button(
                 label="Download Visualization",
                 data=file,
-                file_name="code_relationships_graph.html",
-                mime="text/html"
+                file_name=os.path.basename(selected_file),
+                mime="text/html",
             )
 
-        # Show preview if enabled
-        if st.session_state.get("show_visualization"):
-            st.sidebar.markdown("### Visualization Preview")
+        # Display the HTML preview
+        st.sidebar.markdown("### Visualization Preview")
+        with open(selected_file, "r", encoding="utf-8") as file:
+            html_content = file.read()
 
-            with open("code_relationships_graph.html", "r", encoding="utf-8") as file:
-                html_content = file.read()
-
-            with st.sidebar.container():
-                components.html(
-                    html_content,
-                    height=400,
-                    scrolling=True
-                )
+        with st.sidebar.container():
+            components.html(html_content, height=400, scrolling=True)
+    except Exception as e:
+        st.sidebar.error(f"Error displaying visualization: {e}")
