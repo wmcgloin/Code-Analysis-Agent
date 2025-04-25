@@ -116,9 +116,14 @@ def create_agent_node(agent_name: str, llm: BaseChatModel, tools: List[BaseTool]
         {tools}
 
         You will use each tool only once and the guidelines of the tools are as follows:
-        - You will always use the retrieve_cypher_relationships tool to get an initial answer.
-        - You will always use the generate_text_response tool to get a final answer.
+        - You will always use the generate_text_response tool at least once to get a final answer. Use the generate_text_response tool to begin with if the user is not asking for a relationship but asking for a definition.
+        - You will use the retrieve_cypher_relationships tool if the user is asking about relationships.
         - Only use the visualize_relationships tool to visualize the relationships when the user asks for a visualization.
+
+        Operate from one of the three Scenarios below:
+            - Scenario 1 : generate_text_response
+            - Scenario 2 : retrieve_cypher_relationships --> generate_text_response --> visualize_relationships
+            - Scenario 3 : retrieve_cypher_relationships --> generate_text_response
 
         USE EACH TOOL ONLY ONCE.
 

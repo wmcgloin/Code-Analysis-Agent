@@ -13,7 +13,7 @@ It also manages a shared `query_engine` instance used for natural language query
 # Standard Library
 import os
 import json
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any, Dict, List, Optional
 
 # Third-Party Libraries
 from dotenv import load_dotenv
@@ -102,19 +102,22 @@ def visualize_relationships(results: dict):
 
 
 @tool
-def generate_text_response(results: dict):
+def generate_text_response(question: str, results: Optional[dict] = None):
     """
     Builds a RAG (Retrieval-Augmented Generation) graph from the codebase, then runs a 
     natural language query against it to extract a human-readable explanation.
 
     Args:
         results (dict): The entire result from the retrieve_cypher_relationships tool with no edits
+        question (str): User's initial question
 
     Returns:
         str: Natural language answer to the predefined question.
     """
     logger.info("Generating text response...")
     logger.info(f"Query engine: {query_engine}")
+    logger.info(f"Results: {results}")
+    logger.info(f"Question: {question}")
     if query_engine is None:
         raise ValueError("query_engine is not initialized.")
 
@@ -123,7 +126,7 @@ def generate_text_response(results: dict):
         print("Instance is a string")
         results = json.loads(results)
 
-    initial_response = results["answer"]
+    initial_response = results["answer"] if results else question
     # print("Initial response:", initial_response)
 
     # Query the system
