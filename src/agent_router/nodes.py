@@ -6,15 +6,17 @@ Each node handles different roles in the task delegation workflow.
 """
 
 from typing import List, Literal
+
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.tools import BaseTool
-from langgraph.types import Command
 from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
+from langgraph.types import Command
 
-from .state import RouterState, RouterOutput
 from utils import get_logger
+
+from .state import RouterOutput, RouterState
 
 logger = get_logger()
 
@@ -39,7 +41,7 @@ def create_supervisor_node(llm: BaseChatModel) -> callable:
            of the codebase's structure and relationships. It is capable of generating text responses with visualizations
            when the user requests them.
            
-        2. macro: This agent analyzes code repositories and creates high-level logical relationship graphs
+        2. macro: This agent analyzes code repositories and creates high-level logical relationship mermaid diagrams
            showing how files, components, modules, and concepts correlate to each other. It aims to create a simplified
            abstraction with minimal nodes (fewer than 5 for small codebases) for a quick overview.
         
@@ -55,7 +57,9 @@ def create_supervisor_node(llm: BaseChatModel) -> callable:
         Always explain your reasoning for choosing a particular agent or deciding to finish.
     """
 
-    def supervisor_node(state: RouterState) -> Command[Literal["macro", "micro", "__end__"]]:
+    def supervisor_node(
+        state: RouterState,
+    ) -> Command[Literal["macro", "micro", "__end__"]]:
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
 
         logger.debug(f"Supervisor processing {len(messages)} messages")
@@ -68,21 +72,20 @@ def create_supervisor_node(llm: BaseChatModel) -> callable:
 
         supervisor_message = AIMessage(
             content=f"I've decided to route to {goto if goto != END else 'FINISH'} because it's the most suitable next step.",
-            name="supervisor"
+            name="supervisor",
         )
 
         return Command(
             goto=goto,
-            update={
-                "next": goto,
-                "messages": state["messages"] + [supervisor_message]
-            },
+            update={"next": goto, "messages": state["messages"] + [supervisor_message]},
         )
 
     return supervisor_node
 
 
-def create_agent_node(agent_name: str, llm: BaseChatModel, tools: List[BaseTool] = None) -> callable:
+def create_agent_node(
+    agent_name: str, llm: BaseChatModel, tools: List[BaseTool] = None
+) -> callable:
     """
     Builds an agent node (macro or micro) that performs a specific analysis task.
 
@@ -98,12 +101,20 @@ def create_agent_node(agent_name: str, llm: BaseChatModel, tools: List[BaseTool]
 
     # Role-specific system prompt
     if agent_name == "macro":
-        system_prompt = """
+        system_prompt = f"""
         You are a macro-level strategic agent. You excel at:
         - Understanding the big picture
         - Creating high-level plans and strategies
         - Breaking down complex problems into manageable parts
         - Identifying key objectives and priorities
+
+        You are given the following tools.
+        {tools}
+
+        You will use each tool only once and the guidelines of the tools are as follows:
+        - You will always use the generate_text_response tool to get an initial answer.
+        - You will always use the generate_mermaid_diagram tool to get a final answer.
+
         
         Focus on planning and strategic thinking. For detailed implementation, 
         defer to the micro agent.
@@ -137,7 +148,9 @@ def create_agent_node(agent_name: str, llm: BaseChatModel, tools: List[BaseTool]
         result = agent.invoke(state)
 
         agent_response = result["messages"][-1].content
-        logger.debug(f"{agent_name.capitalize()} agent response: {agent_response[:100]}...")
+        logger.debug(
+            f"{agent_name.capitalize()} agent response: {agent_response[:100]}..."
+        )
 
         agent_message = AIMessage(content=agent_response, name=agent_name)
         return Command(

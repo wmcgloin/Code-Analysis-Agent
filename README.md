@@ -6,36 +6,38 @@ This project builds a system that:
 - **Analyzes** Python codebases into semantic graphs (using LLMs and Neo4j)
 - **Visualizes** module and function relationships interactively
 - **Queries** the codebase using an agentic Graph + Retrieval-Augmented Generation (RAG) workflow
+- **Generates macro-level summaries** and **mermaid diagrams** of overall code structure
 
 ## Project Structure
 
 ```
 src/
-├── agent_router/         # LangGraph agent router
+├── agent_router/         # LangGraph agent router (multi-agent setup)
 │   ├── graph.py
 │   ├── nodes.py
-│   ├── state.py
-├── app/                  # Streamlit app logic
+│   └── state.py
+├── app/                  # Streamlit app and session management
 │   ├── graph_builders/    # Codebase graph construction
 │   │   └── micro_graph_builder.py
-│   ├── handlers/         # Query handling and processing
+│   ├── handlers/          # Query handling
 │   │   └── query_handler.py
-│   ├── setup/            # Database initialization utilities
+│   ├── setup/             # Database initialization
 │   │   └── initialize_database.py
-│   ├── ui/               # Frontend (chat, visualization)
+│   ├── ui/                # Frontend (chat, visualization)
 │   │   ├── chat.py
 │   │   └── visualization.py
-│   └── session_state.py  # Session state management
-├── rag/                  # RAG system setup
+│   └── session_state.py   # Streamlit session management
+├── rag/                  # Retrieval-augmented generation (RAG) setup
 │   └── vector_rag.py
-├── tools/                # Tools for LangGraph agents
-│   ├── micro/            # Micro agent tools (Cypher, RAG)
+├── tools/                # Tool modules for LangGraph agents
+│   ├── macro/             # Macro agent tools (summarization, mermaid diagram generation)
+│   │   └── tools.py
+│   ├── micro/             # Micro agent tools (Cypher query building, visualization)
 │   │   ├── cypher_query_builder.py
 │   │   ├── cypher_visualizer.py
 │   │   └── tools.py
-│   ├── macro/            # (reserved for future macro agent tools)
-│   │   └── tools.py
-├── utils/                # Utilities
+│   └── setup.py
+├── utils/                # Utility functions
 │   ├── filesystem.py
 │   ├── logger.py
 │   └── repo.py
@@ -45,19 +47,20 @@ src/
 ## Key Features
 
 - **Multi-stage code analysis:**
-  - Natural language descriptions of Python code.
-  - Conversion to graph structures stored in Neo4j.
-  - RAG system for flexible natural language queries.
+  - Extracts natural language descriptions of classes, functions, and modules.
+  - Converts codebases into semantic graph structures stored in Neo4j.
+  - Builds a RAG system for flexible natural language querying.
 
-- **LangGraph Agent Router:**
-  - Routes queries dynamically to micro agent tools.
-  - Supports Cypher relationship retrieval, visualization, and free-text explanation.
+- **LangGraph Multi-Agent Router:**
+  - Routes queries dynamically between *micro-level* (fine-grained) and *macro-level* (big picture) tools.
+  - Micro agent supports Cypher relationship retrieval, visualization, and RAG querying.
+  - Macro agent generates text summaries and mermaid diagrams for architecture overviews.
 
 - **Interactive Streamlit Interface:**
   - Clone GitHub repositories.
-  - Select folders to initialize analysis.
-  - Visualize code structures live.
-  - Chat with your codebase.
+  - Select and analyze source folders.
+  - Visualize live code graphs.
+  - Chat with your codebase using flexible agents.
 
 ## Getting Started
 
@@ -81,13 +84,13 @@ streamlit run src/streamlit_app.py
 
 ## Notes
 - Requires a running Neo4j instance.
-- Assumes Python 3.11+.
+- Assumes Python 3.10+.
 - Optimized for small-to-medium Python codebases (<10k files).
+- OpenAI API (GPT-4o) is used for LLM-based analysis.
 
 ## Future Extensions
-- Add macro-level graph building.
-- Improve multi-agent coordination.
-- Support additional graph visualizations.
+- **Visualization Improvements:** Enhance styling, interactivity, and responsiveness of the graph visualizations.
+- **Assorted Usability Improvements:** Better error handling, more flexible file selection, support for additional file types beyond .py.
 
 ---
 

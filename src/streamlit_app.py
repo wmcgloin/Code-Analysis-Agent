@@ -10,10 +10,10 @@ Features:
 Main logic begins in the `main()` function.
 """
 
+import atexit
 import os
 import shutil
 import subprocess
-import atexit
 import time
 import uuid
 from functools import lru_cache
@@ -21,19 +21,18 @@ from typing import Any, Dict, List
 
 import streamlit as st
 import streamlit.components.v1 as components
-
+from langchain.chat_models import \
+    init_chat_model  # may not be needed in main loop
 from langchain_anthropic import ChatAnthropic  # unused
-from langchain.chat_models import init_chat_model # may not be needed in main loop
 from langchain_core.messages import AIMessage, HumanMessage
 
-from app.session_state import initialize_session_state, cleanup_repo
+from app.handlers import process_query
+from app.session_state import cleanup_repo, initialize_session_state
 from app.setup import initialize_database
 from app.ui import display_messages, display_visualization
-from app.handlers import process_query
-from utils.repo import (clone_repo_from_url, delete_cloned_repo, repo_exists, get_cached_repo_tree, REPO_DIR)
 from utils import LogLevel, get_logger, set_log_level
-
-
+from utils.repo import (REPO_DIR, clone_repo_from_url, delete_cloned_repo,
+                        get_cached_repo_tree, repo_exists)
 
 logger = get_logger()
 set_log_level("DEBUG")
@@ -59,7 +58,7 @@ def main():
     - Repository structure preview
     - LangGraph-based agent chat interface for answering codebase questions
     """
-    
+
     # Ensure all required session state variables are initialized
     initialize_session_state()
     logger.info(f"Session thread_id: {st.session_state.thread_id}")
@@ -67,14 +66,16 @@ def main():
 
     # Sidebar Header and Description
     st.sidebar.title("Code Analysis Agent")
-    st.sidebar.markdown("This app uses a LangGraph-based agent router to analyze code repositories.")
+    st.sidebar.markdown(
+        "This app uses a LangGraph-based agent router to analyze code repositories."
+    )
 
     # Input: GitHub repo URL
     repo_url = st.sidebar.text_input(
         "GitHub Repository URL",
         value=st.session_state.repo_path,
         help="Enter a GitHub repo to analyze (e.g., https://github.com/user/repo)",
-        placeholder="https://github.com/username/repo"
+        placeholder="https://github.com/username/repo",
     )
     st.session_state.repo_path = repo_url
 
@@ -117,7 +118,7 @@ def main():
                         if os.path.exists("code_relationships_graph.html"):
                             os.remove("code_relationships_graph.html")
                             logger.debug("Visualization file deleted")
-                            
+
                     except Exception as e:
                         logger.error(f"Error clearing Neo4j DB: {e}")
                         st.error(f"Failed to clear Neo4j database: {e}")
@@ -134,10 +135,14 @@ def main():
 
     # Reset conversation thread (new UUID, clears messages)
     if st.sidebar.button("Reset Conversation"):
-        old_thread_id = st.session_state.thread_id if "thread_id" in st.session_state else "none"
+        old_thread_id = (
+            st.session_state.thread_id if "thread_id" in st.session_state else "none"
+        )
         st.session_state.thread_id = str(uuid.uuid4())
         st.session_state.messages = []
-        logger.debug(f"Thread reset from {old_thread_id} to {st.session_state.thread_id}")
+        logger.debug(
+            f"Thread reset from {old_thread_id} to {st.session_state.thread_id}"
+        )
         st.sidebar.success("New conversation started.")
 
     # If repo is cloned, show repo structure & database initialization tools
@@ -158,7 +163,7 @@ def main():
         src_folders = st.sidebar.text_input(
             "Source folder (relative path)",
             help="Enter a single folder to analyze, such as `src` or `.` for the repo root.",
-            placeholder="e.g. src, backend/api, ."
+            placeholder="e.g. src, backend/api, .",
         )
 
         if st.sidebar.button("Initialize Database"):
@@ -183,12 +188,20 @@ def main():
                 else:
                     # Database not initialized yet
                     st.session_state.messages.append(HumanMessage(content=user_query))
-                    st.session_state.messages.append(AIMessage(content="Please initialize the database using the 'Initialize Database' button in the sidebar before asking questions."))
+                    st.session_state.messages.append(
+                        AIMessage(
+                            content="Please initialize the database using the 'Initialize Database' button in the sidebar before asking questions."
+                        )
+                    )
                     display_messages()
             else:
                 # Repo not cloned yet
                 st.session_state.messages.append(HumanMessage(content=user_query))
-                st.session_state.messages.append(AIMessage(content="Please clone a repository first using the 'Analyze' button before asking questions."))
+                st.session_state.messages.append(
+                    AIMessage(
+                        content="Please clone a repository first using the 'Analyze' button before asking questions."
+                    )
+                )
                 display_messages()
         else:
             # No new input – show chat history
@@ -198,3 +211,4 @@ def main():
 if __name__ == "__main__":
     # Run the main function
     main()
+

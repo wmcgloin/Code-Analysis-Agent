@@ -10,49 +10,66 @@ This script defines the `process_query` function, which manages the end-to-end f
 It acts as the bridge between the Streamlit UI and the LangGraph agent's underlying tool and database systems.
 """
 
-
-from langchain_core.messages import AIMessage, HumanMessage
-import streamlit as st
 import logging
+
+import streamlit as st
+from langchain_core.messages import AIMessage, HumanMessage
+
+import tools.macro.tools as mat
 import tools.micro.tools as mt
 from app.ui import display_messages
 
 logger = logging.getLogger(__name__)
 
+
 def process_query(user_query: str, repo_path: str):
     """
     Process a user query using the agent router.
     """
+    # Load repo_path to macro tool
+    mat.repo_path = repo_path
+
     # Check if database is initialized
     if not "database" in st.session_state or not st.session_state.database:
         # Add messages to session state only, don't display them here
         st.session_state.messages.append(HumanMessage(content=user_query))
-        st.session_state.messages.append(AIMessage(content="Please initialize the database first before asking questions."))
+        st.session_state.messages.append(
+            AIMessage(
+                content="Please initialize the database first before asking questions."
+            )
+        )
         return
-    
+
     # Connect query engine to micro_tools before each query
-    if "query_engines" in st.session_state.database and st.session_state.database["query_engines"]:
+    if (
+        "query_engines" in st.session_state.database
+        and st.session_state.database["query_engines"]
+    ):
         try:
             # Get the first available query engine
-            first_engine_key = list(st.session_state.database["query_engines"].keys())[0]
+            first_engine_key = list(st.session_state.database["query_engines"].keys())[
+                0
+            ]
             query_engine = st.session_state.database["query_engines"][first_engine_key]
-            
+
             # Set it in the micro_tools module
             mt.query_engine = query_engine
-            logger.debug(f"Query engine from {first_engine_key} connected to micro_tools")
+            logger.debug(
+                f"Query engine from {first_engine_key} connected to micro_tools"
+            )
         except Exception as e:
             logger.error(f"Failed to connect query engine to tools: {e}")
-    
+
     # Add repository path to the query
     full_query = f"{user_query}"
 
     # Add the user message to the conversation history
     user_message = HumanMessage(content=full_query)
     st.session_state.messages.append(user_message)
-    
+
     # Display messages up to this point (including the new user message)
     display_messages()
-    
+
     # Create a placeholder for the assistant's thinking message
     with st.chat_message("assistant"):
         thinking_placeholder = st.empty()
@@ -66,7 +83,7 @@ def process_query(user_query: str, repo_path: str):
     #     # Add the first query engine to the initial state (can be expanded to include all engines)
     #     first_engine_key = list(st.session_state.database["query_engines"].keys())[0]
     #     query_engine = st.session_state.database["query_engines"][first_engine_key]
-        
+
     #     # Import and set up micro_tools to use our query engine
     #     try:
     #         from tools import micro_tools
@@ -75,7 +92,6 @@ def process_query(user_query: str, repo_path: str):
     #     except Exception as e:
     #         logger.error(f"Failed to make query engine available to router: {e}")
 
-    
     config = {"configurable": {"thread_id": st.session_state.thread_id}}
 
     # Process the query with the agent router
@@ -142,3 +158,4 @@ def process_query(user_query: str, repo_path: str):
         st.session_state.messages.append(AIMessage(content=error_msg))
         # Update the placeholder with the error message
         thinking_placeholder.markdown(error_msg)
+
