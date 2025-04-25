@@ -156,10 +156,14 @@ class MicroCodeGraphBuilder:
         # Step 1: Generate natural language descriptions of code
         python_files = list_python_files(repo_path)
         for relative_path in python_files:
+            if not relative_path.endswith('.py'):
+                continue  # Skip non-python files early
             print(f"Processing file: {relative_path}")
             file_path = os.path.join(repo_path, relative_path)
             try:
                 code_content = read_code_file(file_path)
+                if code_content is None:
+                    continue  # Skip unreadable file
                 messages = [
                     SystemMessage(content=self.system_prompt),
                     HumanMessage(content=f"""
