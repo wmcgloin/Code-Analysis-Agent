@@ -25,6 +25,9 @@ from langchain.chat_models import init_chat_model
 
 from utils.repo import generate_repo_tree
 
+from utils import get_logger
+# Set up module-wide logger
+logger = get_logger()
 
 class State(TypedDict):
     """LangGraph application state for semantic code queries."""
@@ -135,9 +138,13 @@ class RAGVectorDBSetup:
             docs = splitter.create_documents([description])
             for doc in docs:
                 doc.metadata["source"] = file_path
-            all_docs.extend(docs)
+            logger.debug(f"Adding {len(docs)} chunks for {file_path} to vector store")
 
-        self.vector_store.add_documents(all_docs)
+            self.vector_store.add_documents(all_docs)
+
+        #     all_docs.extend(docs)
+            
+        # self.vector_store.add_documents(all_docs)
         return self.vector_store
 
     def setup_vector_database(self):
