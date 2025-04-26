@@ -12,7 +12,7 @@ import uuid
 import streamlit as st
 from utils import get_logger, set_log_level
 from tools.setup import setup_analysis_tools
-from agent_router import create_router_graph
+from agent_router.graph import create_router_graph
 
 logger = get_logger()
 set_log_level("DEBUG")  # Optional but helpful for debugging state/session logic

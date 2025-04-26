@@ -11,6 +11,7 @@ The goal is to support intelligent, context-aware queries over codebases.
 """
 
 import os
+import asyncio
 from typing import Dict, List, Optional
 
 from typing_extensions import Annotated, TypedDict
@@ -62,7 +63,7 @@ class RAGVectorDBSetup:
         self.embedding_model = embedding_model
         self.embeddings = OpenAIEmbeddings(model=embedding_model)
         self.vector_store = InMemoryVectorStore(self.embeddings)
-        self.llm = init_chat_model("gpt-4o", model_provider="openai")
+        self.llm = init_chat_model("gpt-4.1-mini", model_provider="openai")
 
         self.code_description_prompt = """
         You are an expert in translating code into natural language.
@@ -73,18 +74,26 @@ class RAGVectorDBSetup:
         self.repo_tree = None
         self.descriptions: Dict[str, str] = {}
 
-    def generate_code_descriptions(self) -> Dict[str, str]:
+    async def generate_code_descriptions_async(self, concurrency_limit: int = 5) -> Dict[str, str]:
         """
-        Traverse the repo and use an LLM to generate natural language descriptions for each code file.
+        Asynchronously traverse the repo and use an LLM to generate natural language 
+        descriptions for each code file with controlled concurrency.
+
+        Args:
+            concurrency_limit: Maximum number of concurrent LLM requests
 
         Returns:
             Dictionary mapping file paths to LLM-generated descriptions.
         """
         descriptions = {}
+        semaphore = asyncio.Semaphore(concurrency_limit)
+        tasks = []
 
         if not self.repo_tree:
             self.repo_tree = generate_repo_tree(self.repo_path)
 
+        # Collect all file paths to process
+        files_to_process = []
         for root, dirs, files in os.walk(self.repo_path):
             dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS and not d.startswith(".")]
             for file in files:
@@ -102,15 +111,24 @@ class RAGVectorDBSetup:
                 except Exception as e:
                     print(f"Error checking file size {file_path}: {e}")
                     continue
-                file_path = os.path.join(root, file)
+                
                 relative_path = os.path.relpath(file_path, self.repo_path)
                 rel_path = relative_path.replace("\\", ".")  # Normalize for module names
-
+                files_to_process.append((file_path, rel_path))
+        
+        # Define the async processing function
+        async def process_file(file_path, rel_path):
+            async with semaphore:  # Limit concurrency
                 logger.debug(f"Generating description for {file_path}")
-
                 try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        code = f.read()
+                    # Read file in a non-blocking way
+                    code = ""
+                    try:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            code = f.read()
+                    except Exception as e:
+                        logger.error(f"Error reading file {file_path}: {e}")
+                        return rel_path, None
 
                     messages = [
                         SystemMessage(self.code_description_prompt),
@@ -125,16 +143,30 @@ class RAGVectorDBSetup:
                             {code}
                         """)
                     ]
-                    response = self.llm.invoke(messages)
-                    descriptions[rel_path] = response.content
-
                     
-
+                    # Run LLM in a thread to make it non-blocking
+                    response = await asyncio.to_thread(self.llm.invoke, messages)
+                    return rel_path, response.content
+                    
                 except Exception as e:
-                    print(f"Error processing {file_path}: {e}")
+                    logger.error(f"Error processing {file_path}: {e}")
+                    return rel_path, None
 
-        self.descriptions = {k.replace('\\', '.'): v for k, v in descriptions.items()}
+        # Create tasks for all files
+        for file_path, rel_path in files_to_process:
+            tasks.append(process_file(file_path, rel_path))
+        
+        # Execute all tasks concurrently with controlled parallelism
+        results = await asyncio.gather(*tasks)
+        
+        # Process results
+        for rel_path, content in results:
+            if content:
+                descriptions[rel_path.replace('\\', '.')] = content
+        
+        self.descriptions = descriptions
         return self.descriptions
+
 
     def build_vector_store(self):
         """
@@ -169,16 +201,127 @@ class RAGVectorDBSetup:
         # self.vector_store.add_documents(all_docs)
         return self.vector_store
 
-    def setup_vector_database(self):
+    # Modify the setup_vector_database method to have an async version
+    async def setup_vector_database_async(self, concurrency_limit: int = 5):
         """
-        Generate descriptions and populate the vector database.
+        Asynchronously generate descriptions and populate the vector database.
 
+        Args:
+            concurrency_limit: Maximum number of concurrent LLM requests
+            
         Returns:
             The completed vector store.
         """
-        self.generate_code_descriptions()
+        await self.generate_code_descriptions_async(concurrency_limit)
         self.build_vector_store()
         return self.vector_store
+
+    # def generate_code_descriptions(self) -> Dict[str, str]:
+    #     """
+    #     Traverse the repo and use an LLM to generate natural language descriptions for each code file.
+
+    #     Returns:
+    #         Dictionary mapping file paths to LLM-generated descriptions.
+    #     """
+    #     descriptions = {}
+
+    #     if not self.repo_tree:
+    #         self.repo_tree = generate_repo_tree(self.repo_path)
+
+    #     for root, dirs, files in os.walk(self.repo_path):
+    #         dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS and not d.startswith(".")]
+    #         for file in files:
+    #             # Only process Python files and other text files for code analysis
+    #             if (file.startswith(".") or 
+    #                 not file.endswith(('.py', '.md', '.txt', '.yaml', '.yml'))):
+    #                 continue
+                    
+    #             # Add a file size check to avoid large files
+    #             file_path = os.path.join(root, file)
+    #             try:
+    #                 if os.path.getsize(file_path) > 1_000_000:  # Skip files larger than 1MB
+    #                     print(f"Skipping large file: {file_path}")
+    #                     continue
+    #             except Exception as e:
+    #                 print(f"Error checking file size {file_path}: {e}")
+    #                 continue
+    #             file_path = os.path.join(root, file)
+    #             relative_path = os.path.relpath(file_path, self.repo_path)
+    #             rel_path = relative_path.replace("\\", ".")  # Normalize for module names
+
+    #             logger.debug(f"Generating description for {file_path}")
+
+    #             try:
+    #                 with open(file_path, "r", encoding="utf-8") as f:
+    #                     code = f.read()
+
+    #                 messages = [
+    #                     SystemMessage(self.code_description_prompt),
+    #                     HumanMessage(f"""
+    #                         Tree:
+    #                         {self.repo_tree}
+
+    #                         Current File Path:
+    #                         {rel_path}
+
+    #                         Code:
+    #                         {code}
+    #                     """)
+    #                 ]
+    #                 response = self.llm.invoke(messages)
+    #                 descriptions[rel_path] = response.content
+
+                    
+
+    #             except Exception as e:
+    #                 print(f"Error processing {file_path}: {e}")
+
+    #     self.descriptions = {k.replace('\\', '.'): v for k, v in descriptions.items()}
+    #     return self.descriptions
+
+    # def build_vector_store(self):
+    #     """
+    #     Split natural language descriptions and store them in a vector database.
+        
+    #     Returns:
+    #         An InMemoryVectorStore containing the embedded document chunks.
+    #     """
+    #     if not self.descriptions:
+    #         self.generate_code_descriptions()
+
+    #     splitter = RecursiveCharacterTextSplitter(
+    #         chunk_size=1000,
+    #         chunk_overlap=200,
+    #         length_function=len,
+    #         is_separator_regex=False,
+    #     )
+
+    #     all_docs = []
+    #     for file_path, description in self.descriptions.items():
+    #         docs = splitter.create_documents([description])
+    #         for doc in docs:
+    #             doc.metadata["source"] = file_path
+            
+    #         logger.debug(f"Processed {file_path} into {len(docs)} chunks")
+            
+    #         self.vector_store.add_documents(all_docs)
+    #         logger.debug(f"Adding {len(docs)} chunks for {file_path} to vector store")
+
+    #     #     all_docs.extend(docs)
+            
+    #     # self.vector_store.add_documents(all_docs)
+    #     return self.vector_store
+
+    # def setup_vector_database(self):
+    #     """
+    #     Generate descriptions and populate the vector database.
+
+    #     Returns:
+    #         The completed vector store.
+    #     """
+    #     self.generate_code_descriptions()
+    #     self.build_vector_store()
+    #     return self.vector_store
 
 
 class RAGQueryEngine:
@@ -249,7 +392,8 @@ class RAGQueryEngine:
 def create_rag_system(
     repo_path: str,
     embedding_model: str = "text-embedding-3-large",
-    llm_model: str = "gpt-40",
+    llm_model: str = "gpt-4o",
+    use_async: bool = True,
 ) -> tuple[RAGVectorDBSetup, RAGQueryEngine]:
     """
     Orchestrates end-to-end RAG system initialization from a code repository.
@@ -264,8 +408,18 @@ def create_rag_system(
     """
     # Initialize the vector database setup
     db_setup = RAGVectorDBSetup(repo_path, embedding_model)
-    vector_store = db_setup.setup_vector_database()
-
+    # vector_store = db_setup.setup_vector_database()
+    # Choose between async and sync implementation
+    if use_async:
+        # Define a simple async wrapper function to be executed
+        async def async_setup():
+            return await db_setup.setup_vector_database_async()
+        
+        # Run the async function with asyncio.run
+        vector_store = asyncio.run(async_setup())
+    else:
+        # Use the synchronous version
+        vector_store = db_setup.setup_vector_database()
     # Initialize the query engine
     query_engine = RAGQueryEngine(vector_store, llm_model)
     

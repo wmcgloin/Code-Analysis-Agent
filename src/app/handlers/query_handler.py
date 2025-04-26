@@ -17,7 +17,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 import tools.macro.tools as mat
 import tools.micro.tools as mt
-from app.ui import display_messages
+from app.ui.chat import display_messages
 
 logger = logging.getLogger(__name__)
 

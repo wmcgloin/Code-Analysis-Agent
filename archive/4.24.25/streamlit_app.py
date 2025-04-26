@@ -14,7 +14,7 @@ import streamlit as st
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage
 
-from agent_router import create_router_graph
+from agent_router.graph import create_router_graph
 
 from tools.code_analysis_tools import (explain_code_logic, generate_repo_tree, list_python_files, read_code_file)
 import tools.micro_tools as mt

@@ -26,10 +26,11 @@ from langchain.chat_models import \
 from langchain_anthropic import ChatAnthropic  # unused
 from langchain_core.messages import AIMessage, HumanMessage
 
-from app.handlers import process_query
+from app.handlers.query_handler import process_query
 from app.session_state import cleanup_repo, initialize_session_state
-from app.setup import initialize_database
-from app.ui import display_messages, display_visualization
+from app.setup.initialize_database import initialize_database
+from app.ui.chat import display_messages
+from app.ui.visualization import display_visualization
 from utils import LogLevel, get_logger, set_log_level
 from utils.repo import (REPO_DIR, clone_repo_from_url, delete_cloned_repo,
                         get_cached_repo_tree, repo_exists)

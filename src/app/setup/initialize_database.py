@@ -44,7 +44,7 @@ def initialize_database(repo_path: str, src_folders: List[str]) -> Dict:
         progress_bar = status.progress(0)
         
         # Initialize the LLM (language model) for code analysis
-        llm = init_chat_model("gpt-4o", model_provider="openai")
+        llm = init_chat_model("gpt-4.1-mini", model_provider="openai")
         status.update(label="Using OpenAI GPT-4o model for analysis", state="running")
         
         # Initialize variables to store unified results
@@ -117,7 +117,12 @@ def initialize_database(repo_path: str, src_folders: List[str]) -> Dict:
                 try:
                     # Create a new instance for each folder
                     gen_graphdb = MicroCodeGraphBuilder(llm=llm)
-                    graph_db, graph_documents = gen_graphdb.build_graph_and_upload(repo_path=folder_path)
+                    # graph_db, graph_documents = gen_graphdb.build_graph_and_upload(repo_path=folder_path)
+                    import asyncio
+
+                    # Option 1: Using asyncio.run (Python 3.7+)
+                    graph_db, graph_documents = asyncio.run(gen_graphdb.build_graph_and_upload(repo_path=folder_path))
+
                     
                     all_graph_documents.extend(graph_documents)
                     processed_folders.append(folder)
@@ -148,7 +153,7 @@ def initialize_database(repo_path: str, src_folders: List[str]) -> Dict:
                         db_setup, query_engine = create_rag_system(
                             repo_path=folder_path,
                             embedding_model="text-embedding-3-large",
-                            llm_model="gpt-4o",
+                            llm_model="gpt-4.1-mini",
                         )
                         query_engines[folder] = query_engine
                         status.update(label=f"RAG system initialized for {folder}", state="running")
