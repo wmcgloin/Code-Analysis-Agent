@@ -31,7 +31,7 @@ from utils import get_logger
 logger = get_logger()
 
 EXCLUDED_DIRS = {
-    "__pycache__", ".git", ".venv", "legacy", "archive", "archived", "old", ".mypy_cache","dsan6725", "DSAN6725"
+    "__pycache__", ".git", ".venv", "legacy", "archive", "archived", "old", ".mypy_cache","dsan6725", "DSAN6725", "_build"
 }
 
 class State(TypedDict):
