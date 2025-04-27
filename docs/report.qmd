@@ -1,0 +1,377 @@
+---
+title: "Unpacking Codebases with Generative AI"
+subtitle: "A LangGraph + Neo4j + Streamlit Project for Codebase Analysis and Interactive Querying"
+authors: ["Jaeho Bahng", "Kang Liu", "Billy McGloin"]
+date: 2025-04-28
+format:
+  html:
+    self-contained: true
+    toc: true
+---
+
+# Introduction
+
+## Project Overview and Purpose
+
+Every developer has faced the challenge of diving into an unfamiliar codebase - trying to untangle dependencies, understand architectural decisions, and figure out "how does this all work together?" For our class project, we set out to address this universal pain point by creating a Code Analysis Agent tool that makes sense of complex Python codebases through the power of AI. By combining language models with graph databases, we've developed a system that can "read" code the way humans do, identifying relationships between components and allowing developers to ask natural questions about structure and functionality.
+
+The Code Analysis Agent functions as an intelligent code exploration assistant, transforming source code into queryable knowledge graphs. By applying natural language processing to code elements, it creates semantic representations that capture the architecture, dependencies, and functional relationships within a codebase. This approach enables developers to gain insights through conversational queries rather than manual code traversal, significantly reducing the cognitive load of understanding unfamiliar or complex projects.
+
+## Key Features
+
+The Code Analysis Agent offers several core capabilities:
+
+- It automatically analyzes Python codebases by parsing files and generating graphs that capture semantic relationships between modules, classes, and functions.
+- It employs a multi-agent reasoning architecture built with LangGraph, enabling dynamic selection between micro-level (fine-grained) and macro-level (high-level) analysis workflows.
+- It provides interactive visualizations, including relationship graphs and mermaid diagrams, to present architectural information in a digestible format.
+- It allows users to query the codebase using natural language, returning LLM-generated explanations, semantic paths, or visual summaries depending on the request.
+
+These features combine to offer both depth and flexibility, making code exploration faster, more structured, and more accessible.
+
+## Technologies Used
+
+The system integrates several modern AI and graph-based technologies:
+
+- LangGraph is used to build the agentic workflow, allowing the system to dynamically route user queries to the appropriate analysis tools.
+- Neo4j serves as the backend graph database, storing semantic relationships extracted from the codebase.
+- Streamlit provides a lightweight, interactive web interface that guides users through repository ingestion, analysis, and querying.
+- OpenAI GPT-4.1-mini acts as the primary language model for natural language understanding, Cypher query generation, and RAG-based retrieval.
+
+Together, these technologies enable the Code Analysis Agent to operate at both a structural and semantic level, offering users a unified and intelligent code exploration experience.
+
+# System Architecture
+
+## Overall Workflow
+
+The Code Analysis Agent follows a multi-stage workflow that transforms raw code repositories into queryable knowledge graphs:
+
+1. Repository Ingestion: When a user provides a GitHub repository URL through the Streamlit interface, the system clones it locally and presents the file structure. Users can then select specific source folders for analysis.
+
+2. Graph Construction: Selected Python files are processed through a pipeline that:
+  - Parses each file to extract classes, functions, and their relationships
+  - Uses LLMs to generate natural language descriptions of code components
+  - Structures these descriptions into a graph format with typed nodes and edges
+  - Uploads the resulting graph to a Neo4j database
+
+
+3. Query Processing: Once the graph database is populated, users can submit natural language questions about the codebase. These queries are:
+  - Routed to the appropriate agent type via the supervisor
+  - Translated into appropriate tool calls (Cypher queries, RAG lookups, etc.)
+  - Processed to generate responses and/or visualizations
+  - Presented to the user via the Streamlit interface
+
+This workflow enables a seamless transition from raw code to interactive analysis without requiring users to understand the underlying graph structures or query languages.
+
+## Agent Router System
+
+The heart of the system's intelligence is its agent router architecture, implemented using LangGraph. This architecture enables dynamic, state-driven processing of user queries through specialized agents:
+
+```{mermaid}
+flowchart TD
+    %% Main nodes
+    Q[User Query] --> S[Supervisor]
+    S --> D[Decision Logic]
+    
+    %% Decision branches
+    D -->|Detailed Code Analysis| M[Micro Agent]
+    D -->|High-Level Overview| MA[Macro Agent]
+    
+    %% Agent tools
+    M --> DT[Detailed Tools]
+    MA --> ST[Strategic Tools]
+    
+    %% Analysis outputs
+    DT --> RA[Relationship Analysis]
+    ST --> CS[Code Summaries]
+    
+    %% Connecting the outputs to final results
+    RA --> R[Response to User]
+    CS --> R
+    
+    %% STYLE SECTION
+    style Q fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style R fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    
+    style S fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style D fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    
+    style M fill:#D1E8D0,stroke:#2E8B57,stroke-width:2px
+    style DT fill:#D1E8D0,stroke:#2E8B57,stroke-width:2px
+    style RA fill:#D1E8D0,stroke:#2E8B57,stroke-width:2px
+    
+    style MA fill:#E6D0E8,stroke:#8A2BE2,stroke-width:2px
+    style ST fill:#E6D0E8,stroke:#8A2BE2,stroke-width:2px
+    style CS fill:#E6D0E8,stroke:#8A2BE2,stroke-width:2px
+    
+    %% Add a clearer description of the paths
+    classDef labelStyle fill:white,stroke:none,color:black
+    class pathLabels labelStyle
+```
+
+The agent router consists of three primary components:
+
+1. Supervisor Node: Analyzes user queries to determine whether they require detailed code relationship analysis (micro) or high-level architectural summaries (macro). This node implements a decision-making process based on the query content and current conversation state.
+
+2. Micro Agent: Specialized for detailed code analysis, this agent has access to tools for:
+  - Building and executing Cypher queries against the Neo4j database
+  - Retrieving specific relationship information between code components
+  - Generating network visualizations of code relationships
+  - Providing detailed explanations using RAG-based retrieval
+
+
+3. Macro Agent: Focused on high-level architectural understanding, this agent can:
+  - Generate natural language summaries of the codebase structure
+  - Create Mermaid diagrams showing logical component relationships
+  - Provide strategic insights about code organization
+
+Each agent operates within a standardized LangGraph workflow, with structured prompting that guides the LLM toward appropriate tool selection and reasoning.
+
+## System Diagrams
+
+### Data Flow Diagram
+
+```{mermaid}
+flowchart LR
+    %% Main data sources
+    repo["GitHub Repository"]
+    code["Source Code Files"]
+    
+    %% Processing components
+    parser["Code Parser"]
+    llm["LLM Processor"]
+    builder["Graph Builder"]
+    
+    %% Storage
+    neo4j["Neo4j Database"]
+    rag_store["RAG Vector Store"]
+    
+    %% User interface elements
+    ui["Streamlit Interface"]
+    vis["Micro Visualization Engine"]
+    vis2["Macro Visualization Engine"]
+    
+    %% Agent system
+    router["LangGraph Router"]
+    
+    %% Tool components
+    subgraph tools["Analysis Tools"]
+        micro_tools["Micro Tools"]
+        macro_tools["Macro Tools"]
+        cypher["Cypher Query Builder"]
+        text_gen["Macro Text Generator"]
+        text_gen2["Micro Text Generator"]
+    end
+    
+    %% Data flows
+    repo --> code
+    code --> parser
+    parser --> llm
+    parser --> macro_tools
+    llm --> builder
+    llm --> rag_store
+    builder --> neo4j
+    
+    ui <--> router
+    router <--> tools
+    
+    text_gen2 <--> rag_store
+    micro_tools <--> cypher
+    micro_tools --> text_gen2
+    macro_tools --> text_gen
+    macro_tools --> vis2
+    
+    cypher <--> neo4j
+    cypher --> vis
+    
+    text_gen --> ui
+    text_gen2 --> ui
+    vis --> ui
+    vis2 --> ui
+    
+    %% STYLE SECTION
+    style repo fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style code fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style ui fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style vis fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style vis2 fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    
+    style router fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style micro_tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style macro_tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    
+    style parser fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style llm fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style builder fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style neo4j fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style rag_store fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style cypher fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style text_gen fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style text_gen2 fill:#F9F9F9,stroke:#333,stroke-width:1px
+```
+
+### Component Diagram
+
+```{mermaid}
+flowchart LR
+    subgraph streamlit["Streamlit App"]
+        cloner["Repo Cloner"]
+        chat["Chat Interface"]
+        vis["Visualization Panel"]
+    end
+    
+    graph_builders["Graph Builders"]
+    db_init["Database Initializer"]
+    router["LangGraph Router"]
+    neo4j["Neo4j DB"]
+    
+    subgraph micro["Micro Tools"]
+        cypher["Cypher Generator"]
+        visualizer["Visualizer"]
+        rag_tool["RAG Query Tool"]
+    end
+    
+    subgraph macro["Macro Tools"]
+        text_gen["Text Generator"]
+        mermaid_gen["Mermaid Generator"]
+    end
+    
+    chat <--> router
+
+    router <--> micro
+    router <--> macro
+
+    cloner --> db_init
+    db_init --> graph_builders
+    graph_builders --> neo4j
+    micro <--> neo4j
+    
+    micro --> vis
+    macro --> vis
+
+    %% STYLE SECTION
+    style streamlit fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style router fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style micro fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style macro fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style db_init fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style graph_builders fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style neo4j fill:#F9F9F9,stroke:#333,stroke-width:1px
+```
+
+The architecture leverages a clear separation of concerns, with distinct components handling repository management, graph construction, agent routing, and visualization. This modular design allows for flexible extension and component replacement, while the central LangGraph router ensures intelligent coordination between the different system capabilities.
+
+Each component is implemented as a Python module with well-defined interfaces, allowing the system to maintain a clean flow of data from code ingestion through analysis to user presentation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{mermaid}
+flowchart LR   
+    %% App section
+    subgraph app["App"]
+
+        main["streamlit_app.py"]
+
+        session["session_state.py"]
+        
+        subgraph ui["UI"]
+            vis["visualization.py"]
+            chat["chat.py"]
+        end
+        
+        subgraph setup["Setup"]
+            init_db["initialize_database.py"]
+        end
+        
+        subgraph handlers["Handlers"]
+            query_handler["query_handler.py"]
+        end
+        
+        subgraph graph_builders["graph_builders"]
+            mgb["micro_graph_builder"]
+        end
+    end
+    
+    %% Tools section
+    subgraph tools["Tools"]
+        setup_tools["setup.py"]
+
+        subgraph micro["micro"]
+            micro_tools["tools.py"]
+        end
+
+        subgraph macro["macro"]
+            macro_tools["tools.py"]
+            cqb["cypher_query_builder.py"]
+            cv["cypher_visualizer.py"]
+        end
+    end
+    
+    %% Utility functions
+    subgraph utils["Utilities"]
+        fs["filesystem utilities"]
+        log["logging"]
+        repo["repository management"]
+    end
+    
+    %% RAG components
+    subgraph rag["RAG"]
+        vector_rag["vector_rag.py"]
+    end
+    
+    %% Agent Router
+    subgraph router["Agent Router"]
+        gar["graph.py"]
+        nar["nodes.py"]
+        sar["state.py"]
+    end
+    
+    %% Simple connections that avoid undefined references
+    main --> session
+    main --> setup
+    main --> ui
+    main --> handlers
+
+    session --> setup_tools
+    session --> gar
+
+    sar --> nar
+    nar --> gar
+    sar --> gar
+
+    app --> utils
+
+    %% log --> fs
+    %% log --> repo
+
+    %% setup --> utils
+    setup --> rag
+    setup --> graph_builders
+
+    router --> utils
+
+    rag --> utils
+    
+    handlers --> tools
+    handlers --> ui
+
+    tools --> utils
+    setup_tools --> micro
+    setup_tools --> macro
+
+    graph_builders --> micro
+
+    macro_tools --> cqb
+    macro_tools -->cv
+
+```
