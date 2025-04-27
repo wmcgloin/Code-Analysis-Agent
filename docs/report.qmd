@@ -130,248 +130,28 @@ Each agent operates within a standardized LangGraph workflow, with structured pr
 
 ### Data Flow Diagram
 
-```{mermaid}
-flowchart LR
-    %% Main data sources
-    repo["GitHub Repository"]
-    code["Source Code Files"]
-    
-    %% Processing components
-    parser["Code Parser"]
-    llm["LLM Processor"]
-    builder["Graph Builder"]
-    
-    %% Storage
-    neo4j["Neo4j Database"]
-    rag_store["RAG Vector Store"]
-    
-    %% User interface elements
-    ui["Streamlit Interface"]
-    vis["Micro Visualization Engine"]
-    vis2["Macro Visualization Engine"]
-    
-    %% Agent system
-    router["LangGraph Router"]
-    
-    %% Tool components
-    subgraph tools["Analysis Tools"]
-        micro_tools["Micro Tools"]
-        macro_tools["Macro Tools"]
-        cypher["Cypher Query Builder"]
-        text_gen["Macro Text Generator"]
-        text_gen2["Micro Text Generator"]
-    end
-    
-    %% Data flows
-    repo --> code
-    code --> parser
-    parser --> llm
-    parser --> macro_tools
-    llm --> builder
-    llm --> rag_store
-    builder --> neo4j
-    
-    ui <--> router
-    router <--> tools
-    
-    text_gen2 <--> rag_store
-    micro_tools <--> cypher
-    micro_tools --> text_gen2
-    macro_tools --> text_gen
-    macro_tools --> vis2
-    
-    cypher <--> neo4j
-    cypher --> vis
-    
-    text_gen --> ui
-    text_gen2 --> ui
-    vis --> ui
-    vis2 --> ui
-    
-    %% STYLE SECTION
-    style repo fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
-    style code fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
-    style ui fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
-    style vis fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
-    style vis2 fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
-    
-    style router fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
-    style tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
-    style micro_tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
-    style macro_tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
-    
-    style parser fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style llm fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style builder fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style neo4j fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style rag_store fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style cypher fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style text_gen fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style text_gen2 fill:#F9F9F9,stroke:#333,stroke-width:1px
-```
+![Data Flow Diagram](assets/DFD.svg)
+
+The Data Flow Diagram illustrates the comprehensive pipeline through which code is processed, analyzed, and made available for interactive querying. At the foundation, Git repositories provide source code that enters our processing pipeline through a multi-stage transformation:
+
+First, the code parser extracts structural elements from Python files, which are then enriched by the LLM processor that generates semantic descriptions and relationships. This processed information flows into two critical storage components: the Neo4j graph database (storing structured relationships) and the RAG vectorstore (enabling semantic retrieval).
+
+The central LangGraph Router orchestrates the system's intelligence, dynamically directing queries to appropriate analysis tools. These tools are divided into micro and macro capabilities - micro tools leverage the Cypher Query Builder to extract precise relationship data from Neo4j, while macro tools generate high-level summaries and architectural diagrams. Both tool sets produce visualizations and textual outputs that are presented through the Streamlit interface.
+
+This architecture enables bidirectional information flow, where user queries trigger specific analysis pathways and results are transformed into appropriate visualizations or textual responses. The color-coded components highlight the distinct functional areas: orange for user-facing interfaces, blue for agent routing logic, and neutral for data processing and storage elements.
 
 ### Component Diagram
 
-```{mermaid}
-flowchart LR
-    subgraph streamlit["Streamlit App"]
-        cloner["Repo Cloner"]
-        chat["Chat Interface"]
-        vis["Visualization Panel"]
-    end
-    
-    graph_builders["Graph Builders"]
-    db_init["Database Initializer"]
-    router["LangGraph Router"]
-    neo4j["Neo4j DB"]
-    
-    subgraph micro["Micro Tools"]
-        cypher["Cypher Generator"]
-        visualizer["Visualizer"]
-        rag_tool["RAG Query Tool"]
-    end
-    
-    subgraph macro["Macro Tools"]
-        text_gen["Text Generator"]
-        mermaid_gen["Mermaid Generator"]
-    end
-    
-    chat <--> router
+![Component Diagram](assets/CD.svg)
 
-    router <--> micro
-    router <--> macro
+The Component Diagram provides a structural view of the system's modular architecture, highlighting the key functional units and their interactions. The system is organized into three primary component groups:
 
-    cloner --> db_init
-    db_init --> graph_builders
-    graph_builders --> neo4j
-    micro <--> neo4j
-    
-    micro --> vis
-    macro --> vis
+**The Streamlit App** serves as the user-facing layer, containing the Repo Cloner for importing code repositories, the Chat Interface for query input and response display, and the Visualization Panel for rendering interactive graphs and diagrams. This frontend communicates bidirectionally with the LangGraph Router, which acts as the central orchestration mechanism.
 
-    %% STYLE SECTION
-    style streamlit fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
-    style router fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
-    style micro fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
-    style macro fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
-    style db_init fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style graph_builders fill:#F9F9F9,stroke:#333,stroke-width:1px
-    style neo4j fill:#F9F9F9,stroke:#333,stroke-width:1px
-```
+**The Router** intelligently delegates user queries to two specialized tool sets: Micro Tools and Macro Tools. Micro Tools include the Cypher Generator for constructing database queries, the Visualizer for rendering relationship graphs, and the RAG Query Tool for semantic retrieval. Macro Tools consist of the Text Generator for producing high-level summaries and the Mermaid Generator for creating architectural diagrams.
 
-The architecture leverages a clear separation of concerns, with distinct components handling repository management, graph construction, agent routing, and visualization. This modular design allows for flexible extension and component replacement, while the central LangGraph router ensures intelligent coordination between the different system capabilities.
+**The Database** layer forms the foundation of the system, housing both the Neo4j graph database for structured relationships and the RAG Vectorstore for semantic embeddings. This layer also includes the Database Initializer for setup and Graph Builders for transforming code into graph structures.
 
-Each component is implemented as a Python module with well-defined interfaces, allowing the system to maintain a clean flow of data from code ingestion through analysis to user presentation.
+This component architecture emphasizes clean separation of concerns while maintaining efficient communication pathways between modules. The color-coding distinguishes user interface components (orange) from agent and tool components (blue) and data storage components (neutral), reflecting their distinct roles in the overall system.
 
 
-
-
-
-
-
-
-
-
-
-
-
-```{mermaid}
-flowchart LR   
-    %% App section
-    subgraph app["App"]
-
-        main["streamlit_app.py"]
-
-        session["session_state.py"]
-        
-        subgraph ui["UI"]
-            vis["visualization.py"]
-            chat["chat.py"]
-        end
-        
-        subgraph setup["Setup"]
-            init_db["initialize_database.py"]
-        end
-        
-        subgraph handlers["Handlers"]
-            query_handler["query_handler.py"]
-        end
-        
-        subgraph graph_builders["graph_builders"]
-            mgb["micro_graph_builder"]
-        end
-    end
-    
-    %% Tools section
-    subgraph tools["Tools"]
-        setup_tools["setup.py"]
-
-        subgraph micro["micro"]
-            micro_tools["tools.py"]
-        end
-
-        subgraph macro["macro"]
-            macro_tools["tools.py"]
-            cqb["cypher_query_builder.py"]
-            cv["cypher_visualizer.py"]
-        end
-    end
-    
-    %% Utility functions
-    subgraph utils["Utilities"]
-        fs["filesystem utilities"]
-        log["logging"]
-        repo["repository management"]
-    end
-    
-    %% RAG components
-    subgraph rag["RAG"]
-        vector_rag["vector_rag.py"]
-    end
-    
-    %% Agent Router
-    subgraph router["Agent Router"]
-        gar["graph.py"]
-        nar["nodes.py"]
-        sar["state.py"]
-    end
-    
-    %% Simple connections that avoid undefined references
-    main --> session
-    main --> setup
-    main --> ui
-    main --> handlers
-
-    session --> setup_tools
-    session --> gar
-
-    sar --> nar
-    nar --> gar
-    sar --> gar
-
-    app --> utils
-
-    %% log --> fs
-    %% log --> repo
-
-    %% setup --> utils
-    setup --> rag
-    setup --> graph_builders
-
-    router --> utils
-
-    rag --> utils
-    
-    handlers --> tools
-    handlers --> ui
-
-    tools --> utils
-    setup_tools --> micro
-    setup_tools --> macro
-
-    graph_builders --> micro
-
-    macro_tools --> cqb
-    macro_tools -->cv
-
-```

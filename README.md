@@ -64,6 +64,8 @@ src/
 
 ## Getting Started
 
+### Option 1: Local Installation
+
 1. Install dependencies:
 ```bash
 pip install -r requirements.txt
@@ -81,6 +83,25 @@ OPENAI_API_KEY=your_openai_key
 ```bash
 streamlit run src/streamlit_app.py
 ```
+
+### Option 2: Docker Deployment
+
+1. Make sure you have Docker and Docker Compose installed on your system.
+
+2. Set up environment variables:
+```bash
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=your_password
+OPENAI_API_KEY=your_openai_key
+```
+
+3. Build and start the containers:
+```bash
+docker-compose up -d
+```
+
+4. Access the application at http://localhost:8501
 
 ## Notes
 - Requires a running Neo4j instance.

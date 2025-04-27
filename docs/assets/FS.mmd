@@ -1,0 +1,99 @@
+flowchart LR
+    %% App section
+    subgraph app["App"]
+
+        main["streamlit_app.py"]
+
+        session["session_state.py"]
+
+        subgraph ui["UI"]
+            vis["visualization.py"]
+            chat["chat.py"]
+        end
+
+        subgraph setup["Setup"]
+            init_db["initialize_database.py"]
+        end
+
+        subgraph handlers["Handlers"]
+            query_handler["query_handler.py"]
+        end
+
+        subgraph graph_builders["graph_builders"]
+            mgb["micro_graph_builder"]
+        end
+    end
+
+    %% Tools section
+    subgraph tools["Tools"]
+        setup_tools["setup.py"]
+
+        subgraph micro["micro"]
+            micro_tools["tools.py"]
+        end
+
+        subgraph macro["macro"]
+            macro_tools["tools.py"]
+            cqb["cypher_query_builder.py"]
+            cv["cypher_visualizer.py"]
+        end
+    end
+
+    %% Utility functions
+    subgraph utils["Utilities"]
+        fs["filesystem utilities"]
+        log["logging"]
+        repo["repository management"]
+    end
+
+    %% RAG components
+    subgraph rag["RAG"]
+        vector_rag["vector_rag.py"]
+    end
+
+    %% Agent Router
+    subgraph router["Agent Router"]
+        gar["graph.py"]
+        nar["nodes.py"]
+        sar["state.py"]
+    end
+
+    %% Simple connections that avoid undefined references
+    main --> session
+    main --> setup
+    main --> ui
+    main --> handlers
+
+    session --> setup_tools
+    session --> gar
+
+    sar --> nar
+    nar --> gar
+    sar --> gar
+
+    app --> utils
+
+    %% log --> fs
+    %% log --> repo
+
+    %% setup --> utils
+    setup --> rag
+    setup --> graph_builders
+
+    router --> utils
+
+    rag --> utils
+
+    handlers --> tools
+    handlers --> ui
+
+    tools --> utils
+    setup_tools --> micro
+    setup_tools --> macro
+
+    graph_builders --> micro
+
+    macro_tools --> cqb
+    macro_tools -->cv
+
+
