@@ -45,4 +45,4 @@ def display_visualization():
         with st.sidebar.container():
             components.html(html_content, height=400, scrolling=True)
     except Exception as e:
-        st.sidebar.error(f"Error displaying visualization: {e}")
+        st.sidebar.info("Visualization not found. Please prompt the agent to generate.")
