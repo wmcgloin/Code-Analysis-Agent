@@ -155,3 +155,24 @@ The Component Diagram provides a structural view of the system's modular archite
 This component architecture emphasizes clean separation of concerns while maintaining efficient communication pathways between modules. The color-coding distinguishes user interface components (orange) from agent and tool components (blue) and data storage components (neutral), reflecting their distinct roles in the overall system.
 
 
+3. Core Components
+Streamlit Interface: covers repository ingestion, user controls, and visualization display.
+Graph Construction: includes the micro graph builder, code-to-natural language conversion, and Neo4j database schema.
+Agent Router: explains the supervisor node, micro vs. macro agent selection, and state management.
+Query Processing Tools: details micro tools (cypher queries, visualization), macro tools (summarization, mermaid diagrams), and RAG implementation.
+
+4. Implementation Details
+File Structure Overview: describes the directory organization and the roles of key modules.
+Key Methods and Algorithms: explains code parsing and relationship extraction, agent decision-making, and graph visualization generation.
+
+5. Usage Guide
+Provides installation instructions, environment setup, a walkthrough of the typical usage workflow, and example interactions.
+
+6. Evaluation
+Covers system performance, limitations, comparisons to existing tools, and user feedback.
+
+7. Future Extensions
+Outlines short-term improvements, the long-term vision for the project, and potential research opportunities.
+
+8. Conclusion
+Summarizes the project, highlights key contributions, and shares lessons learned.
