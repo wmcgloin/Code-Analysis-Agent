@@ -1,0 +1,48 @@
+---
+config:
+  layout: elk
+---
+flowchart LR
+    subgraph streamlit["Streamlit App"]
+        cloner["Repo Cloner"]
+        chat["Chat Interface"]
+        vis["Visualization Panel"]
+    end
+
+    router(["LangGraph Router"])
+
+    subgraph micro["Micro Tools"]
+        cypher["Cypher Generator"]
+        visualizer["Visualizer"]
+        rag_tool["RAG Query Tool"]
+    end
+
+    subgraph macro["Macro Tools"]
+        text_gen["Text Generator"]
+        mermaid_gen["Mermaid Generator"]
+    end
+
+    subgraph database["Database"]
+        neo4j[("Neo4j DB")]
+        vectorstore[("RAG Vectorstore")]
+        db_init["Database Initializer"]
+        graph_builders["Graph Builders"]
+    end
+
+    chat <--> router
+
+    router <--> micro
+    router <--> macro
+
+    cloner --> database
+    micro <--> database
+
+    micro --> vis
+    macro --> vis
+
+    %% STYLE SECTION
+    style streamlit fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style router fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style micro fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style macro fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style database fill:#F9F9F9,stroke:#333,stroke-width:1px

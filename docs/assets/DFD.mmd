@@ -1,0 +1,81 @@
+---
+config:
+  layout: elk
+---
+flowchart LR
+    %% Main data sources
+    repo["Git Repository"]
+    code["Source Code"]
+
+    %% Processing components
+    parser["Code Parser"]
+    llm["LLM Processor"]
+    builder["Graph Builder"]
+
+    %% Storage
+    neo4j[("Neo4j Database")]
+    rag_store[("RAG Vectorstore")]
+
+    %% User interface elements
+    ui["Streamlit Interface"]
+    vis["Micro Visualization Engine"]
+    vis2["Macro Visualization Engine"]
+
+    %% Agent system
+    router(["LangGraph Router"])
+
+    %% Tool components
+    subgraph tools["Analysis Tools"]
+        micro_tools["Micro Tools"]
+        macro_tools["Macro Tools"]
+        cypher["Cypher Query Builder"]
+        text_gen["Macro Text Generator"]
+        text_gen2["Micro Text Generator"]
+    end
+
+    %% Data flows
+    repo --> code
+    code --> parser
+    parser --> llm
+    parser --> macro_tools
+    llm --> builder
+    llm --> rag_store
+    builder --> neo4j
+
+    ui <--> router
+    router <--> tools
+
+    text_gen2 <--> rag_store
+    micro_tools <--> cypher
+    micro_tools --> text_gen2
+    macro_tools --> text_gen
+    macro_tools --> vis2
+
+    cypher <--> neo4j
+    cypher --> vis
+
+    text_gen --> ui
+    text_gen2 --> ui
+    vis --> ui
+    vis2 --> ui
+
+    %% STYLE SECTION
+    style repo fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style code fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style ui fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style vis fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+    style vis2 fill:#FFDDC1,stroke:#FF7F50,stroke-width:2px
+
+    style router fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style micro_tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+    style macro_tools fill:#CDE7F0,stroke:#0277BD,stroke-width:2px
+
+    style parser fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style llm fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style builder fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style neo4j fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style rag_store fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style cypher fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style text_gen fill:#F9F9F9,stroke:#333,stroke-width:1px
+    style text_gen2 fill:#F9F9F9,stroke:#333,stroke-width:1px
