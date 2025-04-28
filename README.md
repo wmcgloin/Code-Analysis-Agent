@@ -95,8 +95,13 @@ NEO4J_USERNAME=neo4j
 NEO4J_PASSWORD=your_password
 OPENAI_API_KEY=your_openai_key
 ```
+3. Populate venv:
+```bash
+uv venv
+uv sync --locked
+```
 
-3. Build and start the containers:
+4. Build and start the containers:
 ```bash
 docker-compose up -d
 ```

@@ -7,6 +7,8 @@ format:
   html:
     self-contained: true
     toc: true
+    execute:
+      eval: false
 ---
 
 # Introduction
@@ -315,7 +317,13 @@ streamlit run src/streamlit_app.py
 
 2. Set environment variables as above.
 
-3. Build and start containers:
+3. Set up virtual environment:
+```bash
+uv venv
+uv sync --locked
+```
+
+4. Build and start containers:
 ```bash
 docker-compose up -d
 ```
@@ -486,3 +494,4 @@ Our technical choices, such as favoring Neo4j over Memgraph, GPT-4.1-mini over o
 While the system achieved its primary goals, evaluation highlighted several areas for future improvement, including efficiency bottlenecks, smarter entity resolution, and more cohesive micro/macro agent coordination. Addressing these challenges could further enhance the system’s usability and scalability, making it suitable for larger and more diverse real-world codebases.
 
 Ultimately, the Code Analysis Agent demonstrates how modern AI tools can significantly reduce the cognitive burden of code comprehension. By turning static source code into a dynamic, interactive knowledge system, this project lays the groundwork for more intelligent, accessible, and intuitive approaches to understanding and navigating software architecture.
+
