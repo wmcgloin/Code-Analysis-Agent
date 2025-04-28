@@ -289,6 +289,23 @@ The macro agent is equipped with two primary tools, each serving a distinct purp
 # Usage Guide
 Provides installation instructions, environment setup, a walkthrough of the typical usage workflow, and example interactions.
 
+To ensure the agent provides an accurate response, the user must specify the exact locations of the nodes. Different prompts activate different pipelines within the agent. Below are example prompts, using a sample repository, to illustrate how to get the response you want.
+
+**Example Repository**
+https://github.com/psf/requests.git
+
+**Micro Agent with Text(GraphRAG + RAG)**
+How is the Requests.Help.Requests_Version related to the Requests.Init module?
+
+**Micro Agent with Text(RAG)**
+What does the Requests.Auth.Httpdigestauth class do?
+
+**Micro Agent with Visualization(GraphRAG)**
+Give me a visualization of how the Requests.Exceptions module is related to the Requests.Api module.
+
+**Macro Agent**
+Give me a highlevel overview of the codebase.
+
 # Evaluation
 Evaluating the pipeline for querying a Graph Database, enriching context through a vector database, or using a CAG pipeline for summarizing a codebase proved to be a complex task. As a result, our evaluation primarily focused on the performance of RAG and the overall system efficiency. 
 
