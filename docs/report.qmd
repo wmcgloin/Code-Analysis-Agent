@@ -5,6 +5,7 @@ authors: ["JaeHo Bahng", "Kang Liu", "Billy McGloin"]
 date: 2025-04-28
 format:
   html:
+    html-math-method: katex
     self-contained: true
     toc: true
     execute:
@@ -328,7 +329,7 @@ uv sync --locked
 docker-compose up -d
 ```
 
-4. Access the app at `http://localhost:8501`.
+5. Access the app at `http://localhost:8501`.
 
 > **Note:** Requires a running Neo4j instance. Optimized for Python 3.10+.
 
@@ -348,26 +349,26 @@ After launching the application:
 
 To ensure the agent provides an accurate response, the user must specify the exact locations of the nodes. Different prompts activate different pipelines within the agent. Below are example prompts, using a sample repository, to illustrate how to get the response you want.
 
-**Example Repository**
-https://github.com/psf/requests.git
+- **Example Repository:**
+[https://github.com/psf/requests.git](https://github.com/psf/requests.git)
 
-**Micro Agent with Text(GraphRAG + RAG)**
+- **Micro Agent with Text (GraphRAG + RAG):**
 How is the Requests.Help.Requests_Version related to the Requests.Init module?
 
-**Micro Agent with Text(RAG)**
+- **Micro Agent with Text (RAG):**
 What does the Requests.Auth.Httpdigestauth class do?
 
-**Micro Agent with Visualization(GraphRAG)**
+- **Micro Agent with Visualization (GraphRAG):**
 Give me a visualization of how the Requests.Exceptions module is related to the Requests.Api module.
 
-**Macro Agent**
-Give me a highlevel overview of the codebase.
+- **Macro Agent:**
+Give me a high-level overview of the codebase.
 
 ## Demonstration
 
 For a full demonstration of the system in action — including repository ingestion, graph construction, querying, and visualization — please watch our 5-minute demo video:
 
-**YouTube Demo Link:** [INSERT LINK HERE]
+**[YouTube Demo](https://www.youtube.com/embed/waSzOOPo6mA)**
 
 The video covers:
 
@@ -404,16 +405,16 @@ This analysis demonstrated that our RAG pipeline is robust and capable of produc
 
 Efficiency is critical for making the Code Analysis Agent usable on real-world codebases. In this section, we evaluate two major aspects: the time required for data ingestion (preprocessing and database population) and the latency experienced during interactive query responses.
 
-### Data preprocessing / ingestion
+### Data Preprocessing/Ingestion
 
 The data preprocessing pipeline consists of several sequential stages: transforming raw Python files into natural language descriptions, generating graph structures, and uploading the results into the Neo4j and vector databases. The following table summarizes the time taken for each of these stages during a typical run on a moderately sized codebase:
 
 | Stage            | Time (Graph DB) | Time (Vector DB) |
 |------------------|-----------------|-----------------|
-| Code → NL        |                 |                 |
-| Graph Generation |                 |                 |
-| Database Input   |                 |                 |
-| **Total Time**   |                 |                 |
+| Code → NL        |        71s         |         57s        |
+| Graph Generation |        381s         |        X         |
+| Database Input   |         62s        |        0s         |
+| **Total Time**   |        8m 34s                |         57s        |
 
 These timings highlight that the initial overhead for ingestion is non-trivial, especially due to the time-intensive nature of code parsing and language model processing. However, once ingestion is complete, the system is able to serve user queries efficiently without needing to reprocess the underlying codebase.
 
@@ -431,11 +432,9 @@ The micro agent handles fine-grained codebase queries, such as retrieving detail
 
 | Stage (Text Response)        | Time (Text Response) | Stage (Visualization Response) | Time (Visualization Response) |
 |-------------------------------|----------------------|---------------------------------|-------------------------------|
-| Total Time                    | --                   | Total Time                      | --                            |
-| Generate Query                | --                   | Generate Query                  | --                            |
-| Execute Cypher Query          | --                   | Execute Cypher Query            | --                            |
-| RAG Retrieval                 | --                   | Create Visualization            | --                            |
-| Generate Final Response       | --                   |                                 |                               |
+| Generate/Execute Query        |          140s          | Generate/Execute Query          |        140s         |
+| RAG Retrieval                 |         10s          | Create Visualization            |        42s          |
+| Total Time                    |           150s           | Total Time                      |         182s           |
 
 Micro-agent responses typically involve a multi-step process: building a Cypher query, executing it against the Neo4j database, optionally performing retrieval-augmented generation (RAG) for additional explanation, and formatting the final output. Visualization workflows replace RAG retrieval with the generation of relationship graphs.
 
@@ -443,13 +442,11 @@ Micro-agent responses typically involve a multi-step process: building a Cypher 
 
 The macro agent generates high-level overviews of the codebase structure and creates mermaid diagrams for architectural summaries. Response timing for macro workflows is shown below:
 
-| Stage (Text Response) | Time (Text Response) | Stage (Visualization Response) | Time (Visualization Response) |
-|------------------------|----------------------|---------------------------------|-------------------------------|
-| Total Time             | --                   | Total Time                      | --                            |
-| LLM Summarization      | --                   |  --                             | --                            |
-| Mermaid Diagram Generation | --               |  --                             | --                            |
-|                        |                      |                                 |                               |
-|                        |                      |                                 |                               |
+| Stage  | Time  |
+|------------------------|----------------------|
+| LLM Summarization      |         16s           | 
+| Mermaid Diagram Generation |        33s        | 
+| Total Time             |         49s           | 
 
 In contrast to the micro agent, the macro agent operates primarily through direct text generation followed by conversion into visual diagrams. As a result, its overall latency tends to be more predictable but may still vary depending on the size and complexity of the input codebase.
 
