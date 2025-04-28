@@ -292,14 +292,20 @@ The macro agent is equipped with two primary tools, each serving a distinct purp
 
 The Code Analysis Agent can be run either locally or via Docker.
 
-**Option 1: Local Installation**
+**Option 1: Local Installation (Recommended with uv)**
 
-1. Install Python dependencies:
+1. Create and activate a virtual environment:
 ```bash
-pip install -r requirements.txt
+uv venv .venv
+source .venv/bin/activate
 ```
 
-2. Create a `.env` file with your environment variables:
+2. Sync dependencies from pyproject.toml:
+```bash
+uv sync
+```
+
+3. Create a `.env` file with your environment variables:
 ```bash
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USERNAME=neo4j
@@ -307,7 +313,7 @@ NEO4J_PASSWORD=your_password
 OPENAI_API_KEY=your_openai_key
 ```
 
-3. Start the Streamlit app:
+4. Start the Streamlit app:
 ```bash
 streamlit run src/streamlit_app.py
 ```
@@ -378,6 +384,12 @@ The video covers:
 - Viewing and downloading visualizations
 - Example natural language queries
 
+## Live Demo Access
+
+You can try the Code Analysis Agent live without any installation!
+Click the link below to start exploring codebases interactively:
+
+[Code Analysis Agent](https://caa.wmcgloin.com)
 
 # Evaluation
 Evaluating the pipeline for querying a Graph Database, enriching context through a vector database, or using a CAG pipeline for summarizing a codebase proved to be a complex task. As a result, our evaluation primarily focused on the performance of RAG and the overall system efficiency. 
