@@ -346,22 +346,6 @@ After launching the application:
 
 ## Example Queries
 
-INSERT EXAMPLES HERE
-
-## Demonstration
-
-For a full demonstration of the system in action — including repository ingestion, graph construction, querying, and visualization — please watch our 5-minute demo video:
-
-**YouTube Demo Link:** [INSERT LINK HERE]
-
-The video covers:
-
-- Setting up the application
-- Cloning and analyzing a repository
-- Interacting with both the micro and macro agents
-- Viewing and downloading visualizations
-- Example natural language queries
-
 To ensure the agent provides an accurate response, the user must specify the exact locations of the nodes. Different prompts activate different pipelines within the agent. Below are example prompts, using a sample repository, to illustrate how to get the response you want.
 
 **Example Repository**
@@ -378,6 +362,21 @@ Give me a visualization of how the Requests.Exceptions module is related to the 
 
 **Macro Agent**
 Give me a highlevel overview of the codebase.
+
+## Demonstration
+
+For a full demonstration of the system in action — including repository ingestion, graph construction, querying, and visualization — please watch our 5-minute demo video:
+
+**YouTube Demo Link:** [INSERT LINK HERE]
+
+The video covers:
+
+- Setting up the application
+- Cloning and analyzing a repository
+- Interacting with both the micro and macro agents
+- Viewing and downloading visualizations
+- Example natural language queries
+
 
 # Evaluation
 Evaluating the pipeline for querying a Graph Database, enriching context through a vector database, or using a CAG pipeline for summarizing a codebase proved to be a complex task. As a result, our evaluation primarily focused on the performance of RAG and the overall system efficiency. 
