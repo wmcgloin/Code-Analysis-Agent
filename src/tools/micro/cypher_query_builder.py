@@ -62,7 +62,7 @@ class ValidateCypherOutput(BaseModel):
 default_examples = [
     {
         "question": "How is the Utils.Utils module related to the Deduplication.__Main__ module?",
-        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..5]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN [n IN nodes(path) | labels(n)] AS nodeTypes, path LIMIT 20",
+        "query": "MATCH path = (m1:Module {id: 'Utils.Utils'})-[*..10]-(m2:Module {id: 'Deduplication.__Main__'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN [n IN nodes(path) | labels(n)] AS nodeTypes, path LIMIT 20",
     },
     {
         "question": "Where is the Utils.Utils model imported?",
@@ -74,11 +74,11 @@ default_examples = [
     },
     {
         "question": "What classes are connected to the LSH.LSHForest module?",
-        "query": "MATCH path = (m:Module {id: 'LSH.LSHForest'})-[*..5]-(c:Class) RETURN [n IN nodes(path) | labels(n)] AS nodeTypes, path LIMIT 20",
+        "query": "MATCH path = (m:Module {id: 'LSH.LSHForest'})-[*..10]-(c:Class) RETURN [n IN nodes(path) | labels(n)] AS nodeTypes, path LIMIT 20",
     },
     {
         "question": "How is the Src.App.Handlers.Query_Handler module related to the Src.Streamlit_App module?",
-        "query": "MATCH path = (m1:Module {id: 'Src.App.Handlers.Query_Handler'})-[*..5]-(m2:Module {id: 'Src.Streamlit_App'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN [n IN nodes(path) | labels(n)] AS nodeTypes, path LIMIT 20",
+        "query": "MATCH path = (m1:Module {id: 'Src.App.Handlers.Query_Handler'})-[*..10]-(m2:Module {id: 'Src.Streamlit_App'}) WHERE NONE(n IN nodes(path) WHERE n:Package) RETURN [n IN nodes(path) | labels(n)] AS nodeTypes, path LIMIT 20",
     },
 ]
 
