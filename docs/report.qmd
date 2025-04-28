@@ -45,16 +45,16 @@ Together, these technologies enable the Code Analysis Agent to operate at both a
 
 The Code Analysis Agent follows a multi-stage workflow that transforms raw code repositories into queryable knowledge graphs:
 
-1. Repository Ingestion: When a user provides a GitHub repository URL through the Streamlit interface, the system clones it locally and presents the file structure. Users can then select specific source folders for analysis.
+1. **Repository Ingestion:** When a user provides a GitHub repository URL through the Streamlit interface, the system clones it locally and presents the file structure. Users can then select specific source folders for analysis.
 
-2. Graph Construction: Selected Python files are processed through a pipeline that:
+2. **Graph Construction:** Selected Python files are processed through a pipeline that:
   - Parses each file to extract classes, functions, and their relationships
   - Uses LLMs to generate natural language descriptions of code components
   - Structures these descriptions into a graph format with typed nodes and edges
   - Uploads the resulting graph to a Neo4j database
 
 
-3. Query Processing: Once the graph database is populated, users can submit natural language questions about the codebase. These queries are:
+3. **Query Processing:** Once the graph database is populated, users can submit natural language questions about the codebase. These queries are:
   - Routed to the appropriate agent type via the supervisor
   - Translated into appropriate tool calls (Cypher queries, RAG lookups, etc.)
   - Processed to generate responses and/or visualizations
@@ -65,6 +65,8 @@ This workflow enables a seamless transition from raw code to interactive analysi
 ## Agent Router System
 
 The heart of the system's intelligence is its agent router architecture, implemented using LangGraph. This architecture enables dynamic, state-driven processing of user queries through specialized agents:
+
+::: {style="text-align: center;"}
 
 ```{mermaid}
 flowchart TD
@@ -108,18 +110,20 @@ flowchart TD
     class pathLabels labelStyle
 ```
 
+:::
+
 The agent router consists of three primary components:
 
-1. Supervisor Node: Analyzes user queries to determine whether they require detailed code relationship analysis (micro) or high-level architectural summaries (macro). This node implements a decision-making process based on the query content and current conversation state.
+1. **Supervisor Node:** Analyzes user queries to determine whether they require detailed code relationship analysis (micro) or high-level architectural summaries (macro). This node implements a decision-making process based on the query content and current conversation state.
 
-2. Micro Agent: Specialized for detailed code analysis, this agent has access to tools for:
+2. **Micro Agent:** Specialized for detailed code analysis, this agent has access to tools for:
   - Building and executing Cypher queries against the Neo4j database
   - Retrieving specific relationship information between code components
   - Generating network visualizations of code relationships
   - Providing detailed explanations using RAG-based retrieval
 
 
-3. Macro Agent: Focused on high-level architectural understanding, this agent can:
+3. **Macro Agent:** Focused on high-level architectural understanding, this agent can:
   - Generate natural language summaries of the codebase structure
   - Create Mermaid diagrams showing logical component relationships
   - Provide strategic insights about code organization
@@ -154,14 +158,7 @@ The Component Diagram provides a structural view of the system's modular archite
 
 This component architecture emphasizes clean separation of concerns while maintaining efficient communication pathways between modules. The color-coding distinguishes user interface components (orange) from agent and tool components (blue) and data storage components (neutral), reflecting their distinct roles in the overall system.
 
-
-<!-- 3. Core Components
-Streamlit Interface: covers repository ingestion, user controls, and visualization display.
-Graph Construction: includes the micro graph builder, code-to-natural language conversion, and Neo4j database schema.
-Agent Router: explains the supervisor node, micro vs. macro agent selection, and state management.
-Query Processing Tools: details micro tools (cypher queries, visualization), macro tools (summarization, mermaid diagrams), and RAG implementation. -->
-
-# Implementation Details
+# Technical Implementation
 
 ## Initialize Database
 When a user submits a GitHub repository through the frontend, a `Langchain InMemory Vectorstore` and a `Neo4j instance` are spun up, ready to store data as soon as preprocessing wraps up.
@@ -200,7 +197,7 @@ The purpose of the micro-agent is to assist end users in understanding the finer
 
 The micro-agent is equipped with three key tools, each serving a distinct role:
 
-1. Cypher Query Chain (GraphRAG)
+1. **Cypher Query Chain (GraphRAG)**
     - **Input**: User request
     - **Process**: Generates a Cypher query based on the user's input (received from the frontend)
     - **Output1**: Retrieves the relevant relationships and nodes from the graph database
@@ -230,7 +227,7 @@ The micro-agent is equipped with three key tools, each serving a distinct role:
         which is used in `Utils.Use_Cases.Nearest_Neighbor_Search` 
         and is imported into `Deduplication.__Main__`
 ```
-1. Text Generation (RAG)
+2. **Text Generation (RAG)**
     - **Input**: Output2 from the Cypher Query Chain tool
     - **Process**: Searches the vector database for semantically similar documents and enriches the initial relationship explanations with broader context
     - **Output**: A fully developed text response that describes both the relationships and the functionality in depth
@@ -240,7 +237,7 @@ The micro-agent is equipped with three key tools, each serving a distinct role:
 
         1. **Union-Find Operations**: The `UnionFind` class in `Utils.Utils` offers efficient set operations important for managing clusters of duplicates and merging them, which is essential for deduplication.
 ```
-1. Visualization Generation
+3. **Visualization Generation**
     - **Input**: Output1 from the Cypher Query Chain tool
     - **Process**: Uses the retrieved graph data to create visual representations
     - **Output**: A final visualization that illustrates the relationships between nodes, helping users quickly grasp the structure and connections within the code
@@ -252,10 +249,10 @@ The macro agent is designed to give users a high-level understanding of the enti
 
 The macro agent is equipped with two primary tools, each serving a distinct purpose:
 
-1. Summary text generator
-    - Input: User request + entire codebase + repository tree
-    - Process: prompt engineered to provide text suitable for mermaid graphs
-    - Output: Summary of entire codebase
+1. **Summary text generator**
+    - **Input:** User request + entire codebase + repository tree
+    - **Process:** prompt engineered to provide text suitable for mermaid graphs
+    - **Output:** Summary of entire codebase
 ```
         Example)
         #### Main Modules & Purposes:
@@ -266,14 +263,14 @@ The macro agent is equipped with two primary tools, each serving a distinct purp
         - **LSHForest.py**: Uses multiple trees for robustness in LSH-based detection.
         - **LSHImproved.py**: Multi-probe techniques in LSH to improve efficiency.
 ```
-2. Mermaid graph generator
-    - Input: Output of the summary text generator tool
-    - Process: Natural language is translated to mermaid graph.
-    - Output: Mermaid graph generated of funcitonalities of the codebase.
+2. **Mermaid graph generator**
+    - **Input:** Output of the summary text generator tool
+    - **Process:** Natural language is translated to mermaid graph.
+    - **Output:** Mermaid graph generated of funcitonalities of the codebase.
         ![Macro Agent Visualization Output](assets/macro_viz_output.png)
 
 
-# Reasons Behind Technical Choices
+## Technical Decision Rationale
 1. **Why Neo4j over Memgraph provided by LangChain?**  
     Initially, we considered using Memgraph's in-memory graph database for the pipeline. However, during testing, we discovered that Memgraph did not fully support the latest Cypher query syntax, particularly when working with a Cypher query generator. This limitation led us to choose Neo4j, which reliably supports the most up-to-date Cypher grammar and provides a robust foundation for our graph-based analysis.
 
@@ -287,7 +284,75 @@ The macro agent is equipped with two primary tools, each serving a distinct purp
     We opted to build a custom pipeline for generating, executing, and retrieving Cypher queries rather than using LangChain's pre-built `GraphCypherQAChain`. This decision was driven by the need for greater customization, such as modifying system prompts and providing specific examples to enforce a strict format for Cypher queries. This tailored approach ensured that our pipeline could handle the unique requirements of our graph-based system effectively.
 
 # Usage Guide
-Provides installation instructions, environment setup, a walkthrough of the typical usage workflow, and example interactions.
+
+## Installation
+
+The Code Analysis Agent can be run either locally or via Docker.
+
+**Option 1: Local Installation**
+
+1. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Create a `.env` file with your environment variables:
+```bash
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=your_password
+OPENAI_API_KEY=your_openai_key
+```
+
+3. Start the Streamlit app:
+```bash
+streamlit run src/streamlit_app.py
+```
+
+**Option 2: Docker Deployment**
+
+1. Ensure Docker and Docker Compose are installed.
+
+2. Set environment variables as above.
+
+3. Build and start containers:
+```bash
+docker-compose up -d
+```
+
+4. Access the app at `http://localhost:8501`.
+
+> **Note:** Requires a running Neo4j instance. Optimized for Python 3.10+.
+
+---
+
+## Basic Usage
+
+After launching the application:
+
+- **Clone a Repository:** Enter a GitHub repository URL and click **"Clone Repository."**
+- **Select Source Folders:** Choose folders you want to analyze (e.g., `src`, `backend/api, .`).
+- **Initialize the Database:** Start the analysis pipeline to extract code structure and relationships.
+- **Ask Questions:** Use natural language queries to explore code relationships and architecture.
+- **Visualize:** Generate interactive graphs and downloadable diagrams of the codebase.
+
+## Example Queries
+
+INSERT EXAMPLES HERE
+
+## Demonstration
+
+For a full demonstration of the system in action — including repository ingestion, graph construction, querying, and visualization — please watch our 5-minute demo video:
+
+**YouTube Demo Link:** [INSERT LINK HERE]
+
+The video covers:
+
+- Setting up the application
+- Cloning and analyzing a repository
+- Interacting with both the micro and macro agents
+- Viewing and downloading visualizations
+- Example natural language queries
 
 # Evaluation
 Evaluating the pipeline for querying a Graph Database, enriching context through a vector database, or using a CAG pipeline for summarizing a codebase proved to be a complex task. As a result, our evaluation primarily focused on the performance of RAG and the overall system efficiency. 
@@ -312,7 +377,12 @@ This analysis demonstrated that our RAG pipeline is robust and capable of produc
 
 
 ## Efficiency
+
+Efficiency is critical for making the Code Analysis Agent usable on real-world codebases. In this section, we evaluate two major aspects: the time required for data ingestion (preprocessing and database population) and the latency experienced during interactive query responses.
+
 ### Data preprocessing / ingestion
+
+The data preprocessing pipeline consists of several sequential stages: transforming raw Python files into natural language descriptions, generating graph structures, and uploading the results into the Neo4j and vector databases. The following table summarizes the time taken for each of these stages during a typical run on a moderately sized codebase:
 
 | Stage            | Time (Graph DB) | Time (Vector DB) |
 |------------------|-----------------|-----------------|
@@ -321,8 +391,19 @@ This analysis demonstrated that our RAG pipeline is robust and capable of produc
 | Database Input   |                 |                 |
 | **Total Time**   |                 |                 |
 
+These timings highlight that the initial overhead for ingestion is non-trivial, especially due to the time-intensive nature of code parsing and language model processing. However, once ingestion is complete, the system is able to serve user queries efficiently without needing to reprocess the underlying codebase.
+
+::: {.callout-note}
+Note: Future improvements such as incremental graph updates (see Future Extensions) could reduce ingestion times significantly.
+:::
+
 ### Response Latency
+
+Response time is crucial for user experience when interacting with the system. We separately measure the latency for both micro-agent and macro-agent workflows, distinguishing between responses that generate natural language answers and those that involve visualization generation.
+
 #### Micro Agent
+
+The micro agent handles fine-grained codebase queries, such as retrieving detailed relationships between modules or classes. Latency is broken down into the following stages:
 
 | Stage (Text Response)        | Time (Text Response) | Stage (Visualization Response) | Time (Visualization Response) |
 |-------------------------------|----------------------|---------------------------------|-------------------------------|
@@ -332,26 +413,76 @@ This analysis demonstrated that our RAG pipeline is robust and capable of produc
 | RAG Retrieval                 | --                   | Create Visualization            | --                            |
 | Generate Final Response       | --                   |                                 |                               |
 
+Micro-agent responses typically involve a multi-step process: building a Cypher query, executing it against the Neo4j database, optionally performing retrieval-augmented generation (RAG) for additional explanation, and formatting the final output. Visualization workflows replace RAG retrieval with the generation of relationship graphs.
+
 #### Macro Agent
+
+The macro agent generates high-level overviews of the codebase structure and creates mermaid diagrams for architectural summaries. Response timing for macro workflows is shown below:
+
 | Stage (Text Response) | Time (Text Response) | Stage (Visualization Response) | Time (Visualization Response) |
 |------------------------|----------------------|---------------------------------|-------------------------------|
 | Total Time             | --                   | Total Time                      | --                            |
+| LLM Summarization      | --                   |  --                             | --                            |
+| Mermaid Diagram Generation | --               |  --                             | --                            |
 |                        |                      |                                 |                               |
 |                        |                      |                                 |                               |
-|                        |                      |                                 |                               |
-|                        |                      |                                 |                               |
 
+In contrast to the micro agent, the macro agent operates primarily through direct text generation followed by conversion into visual diagrams. As a result, its overall latency tends to be more predictable but may still vary depending on the size and complexity of the input codebase.
 
-# Future Extensions
+Overall, while response times are acceptable for typical use cases, further optimizations could enhance responsiveness, particularly for large-scale repositories or complex relational queries.
 
-- **Efficiency**: Response times and data processing speeds need to be faster, particularly when generating data and writing to databases. We should explore better use of parallelization and find more efficient methods for converting text into graph structures.
+# Future Work and Enhancements
 
-- **Smarter Node Matching**: The system currently relies on exact naming (e.g., src.app.graph) to recognize modules. It needs to be more flexible, able to match references made in more natural, conversational language (e.g., "the graph module"). A challenge here is handling cases where different modules, functions, or classes share the same names.
+While the Code Analysis Agent demonstrates strong functionality in its current form, several important extensions and improvements have been identified for future development:
 
-- **More Relevant Cypher Queries**: Right now, the graph queries often return overly broad results, including unrelated detours — for instance, connecting two modules simply because they both import numpy. We need a tighter definition of "relatedness" to avoid these loose, barely-relevant links, especially when the connection is many steps away and functionally weak.
+## Efficiency and Scalability
 
-- **Stronger Coordination Between Micro and Macro Agents**: Currently, the supervisor tends to match a user query with only a single agent. Better integration between micro-level details and macro-level actions would allow agents to collaborate more effectively, providing richer and more accurate responses.
+Processing speed, especially during graph construction and query response generation, remains a bottleneck. Future work should explore optimization strategies, such as:
+
+- Implementing more aggressive parallelization during code parsing and graph uploading.
+- Utilizing more efficient data structures for representing intermediate graph information.
+- Investigating incremental updates to the Neo4j database rather than full re-uploads.
+
+These changes could significantly reduce initialization times and improve system responsiveness for larger repositories.
+
+## Smarter Entity Matching
+
+At present, the system requires strict, fully-qualified names (e.g., src.app.graph) to correctly identify modules and functions. A more robust approach would involve:
+
+- Implementing flexible matching techniques that map user queries phrased in natural language (e.g., "the graph module") to underlying code elements.
+- Leveraging LLM-based entity resolution to handle ambiguous references, especially when names are shared across different parts of the codebase.
+
+This enhancement would make the agent feel more conversational and forgiving, particularly in exploratory settings.
+
+## Improved Query Precision
+
+The current Cypher-based graph queries sometimes yield noisy or overly broad results, connecting modules through weak or incidental relationships (such as shared use of common libraries like numpy). Future improvements could focus on:
+
+- Defining stronger notions of "semantic relevance" between nodes.
+- Incorporating path scoring heuristics to prioritize meaningful architectural links over incidental ones.
+- Introducing adjustable query parameters (e.g., "strict mode") to allow users to control the breadth of relationships retrieved.
+
+This would enable more targeted, insightful exploration of code structures.
+
+## Enhanced Agent Collaboration
+
+Currently, the agent router selects either the micro or macro agent exclusively for a given query. Future work could improve the system by:
+
+- Allowing micro- and macro-agents to communicate or pass intermediate results.
+- Enabling workflows where high-level summaries from the macro agent inform detailed Cypher queries from the micro agent (or vice versa).
+- Building hierarchical reasoning chains that integrate structural overviews with fine-grained relational data.
+
+Such enhancements would allow richer, multi-layered responses, providing users with both strategic overviews and precise technical details in a seamless experience.
+
 
 # Conclusion
-Summarizes the project, highlights key contributions, and shares lessons learned.
 
+This project set out to address a fundamental challenge faced by developers: understanding unfamiliar codebases. By integrating large language models, graph databases, and agentic workflows, we created a Code Analysis Agent capable of transforming raw code into a structured, queryable, and visualizable knowledge base.
+
+Throughout development, we emphasized both depth and flexibility. The system enables detailed exploration of functional relationships via micro-level agents, while also supporting strategic overviews through macro-level summaries and visualizations. By dynamically routing queries to the appropriate agent, the LangGraph-based architecture allows for nuanced, multi-faceted interactions with complex repositories.
+
+Our technical choices, such as favoring Neo4j over Memgraph, GPT-4.1-mini over other LLM options, and custom GraphRAG pipelines over prebuilt solutions, were driven by a desire for precision, control, and future scalability. Extensive preprocessing ensured that both graph and vector representations of the codebase captured meaningful, semantically rich information, enabling a smooth user experience during querying.
+
+While the system achieved its primary goals, evaluation highlighted several areas for future improvement, including efficiency bottlenecks, smarter entity resolution, and more cohesive micro/macro agent coordination. Addressing these challenges could further enhance the system’s usability and scalability, making it suitable for larger and more diverse real-world codebases.
+
+Ultimately, the Code Analysis Agent demonstrates how modern AI tools can significantly reduce the cognitive burden of code comprehension. By turning static source code into a dynamic, interactive knowledge system, this project lays the groundwork for more intelligent, accessible, and intuitive approaches to understanding and navigating software architecture.
