@@ -95,8 +95,13 @@ NEO4J_USERNAME=neo4j
 NEO4J_PASSWORD=your_password
 OPENAI_API_KEY=your_openai_key
 ```
+3. Populate venv:
+```bash
+uv venv
+uv sync --locked
+```
 
-3. Build and start the containers:
+4. Build and start the containers:
 ```bash
 docker-compose up -d
 ```
@@ -107,7 +112,7 @@ docker-compose up -d
 - Requires a running Neo4j instance.
 - Assumes Python 3.10+.
 - Optimized for small-to-medium Python codebases (<10k files).
-- OpenAI API (GPT-4o) is used for LLM-based analysis.
+- OpenAI API (GPT-4o-mini) is used for LLM-based analysis.
 
 ## Future Extensions
 - **Visualization Improvements:** Enhance styling, interactivity, and responsiveness of the graph visualizations.
