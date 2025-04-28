@@ -107,7 +107,7 @@ docker-compose up -d
 - Requires a running Neo4j instance.
 - Assumes Python 3.10+.
 - Optimized for small-to-medium Python codebases (<10k files).
-- OpenAI API (GPT-4o) is used for LLM-based analysis.
+- OpenAI API (GPT-4o-mini) is used for LLM-based analysis.
 
 ## Future Extensions
 - **Visualization Improvements:** Enhance styling, interactivity, and responsiveness of the graph visualizations.
